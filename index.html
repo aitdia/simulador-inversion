@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mi simulador de inversión</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<div class="wrap">
+<header>
+  <span class="stamp">Datos de las empresas de mediados de noviembre de 2026</span>
+  <h1>Mi simulador de inversión</h1>
+  <p>Simula antes de invertir, apunta lo que compras, mira cuánto vale tu cartera y ten preparados los números de la renta.</p>
+</header>
+
+<nav class="tabs" aria-label="Secciones">
+  <a href="#simulador">Simulador</a>
+  <a href="#mercado">Mercado</a>
+  <a href="#cartera">Probar reparto</a>
+  <a href="#compras">Mis inversiones</a>
+  <a href="#renta">Renta</a>
+  <a href="#plan">Plan</a>
+</nav>
+
+<div class="view" id="v-simulador">
+
+<section class="panel" aria-label="Tu inversión">
+  <div class="ask"><label for="amount">Pongo</label><input type="number" id="amount" min="0" max="1000000" step="10" value="200"><span>€ ahora y</span><input type="number" id="monthly" min="0" max="100000" step="10" value="0" aria-label="Euros cada mes"><span>€ cada mes en</span><span id="pick-name"></span></div>
+  <div class="chips" id="chips" role="group" aria-label="Empresa"></div>
+  <div class="opciones">
+    <label class="check" for="neto"><input type="checkbox" id="neto" checked><span>Restar comisiones e impuestos (lo que te llegaría al vender)</span></label>
+    <label class="inline" for="fee">Comisión por compra o venta <input type="number" id="fee" min="0" max="50" step="0.5" value="1"> €</label>
+  </div>
+  <p class="small muted" id="fee-tip">En los planes automáticos de Trade Republic la compra mensual es gratis: si vas a usar uno, pon 0 y solo pagarás al vender.</p>
+</section>
+
+<section class="panel">
+  <h2 id="t-fwd"></h2>
+  <div class="scroll">
+    <table>
+      <thead><tr>
+        <th>Dentro de</th>
+        <th class="aport"><b>Habrás puesto</b>de tu bolsillo</th>
+        <th><b>Si le va mal</b>1 de cada 10 veces iría peor</th>
+        <th><b>Si rinde como la bolsa</b>un 7 % al año</th>
+        <th><b id="h-hot-t">Si repite sus últimos 10 años</b><span id="h-hot"></span></th>
+      </tr></thead>
+      <tbody id="fwd"></tbody>
+    </table>
+  </div>
+  <div class="warn" id="hot-warn" hidden></div>
+  <div class="proxy" id="proxy-box" hidden><label for="proxy-sel">Supón que sube y baja tanto como</label><select id="proxy-sel"></select></div>
+  <p class="small muted" id="fwd-note"></p>
+</section>
+
+<section class="panel" id="mc-panel">
+  <div class="cmp-head"><h2 id="t-mc"></h2><label for="mc-t" class="small muted">Dentro de</label><select id="mc-t"><option value="1">1 año</option><option value="2">2 años</option><option value="3">3 años</option><option value="5">5 años</option><option value="7">7 años</option></select></div>
+  <p class="small muted" id="mc-sub"></p>
+  <div id="mc-res">
+    <div class="facts" id="mc-facts"></div>
+    <div class="hist" id="mc-hist" role="img"></div>
+    <div class="hist-ejes small muted" id="mc-ejes"></div>
+    <p class="small muted" id="mc-note"></p>
+  </div>
+</section>
+
+<section class="panel" id="cmp-panel">
+  <div class="cmp-head"><h2 id="t-cmp"></h2><label for="cmp-sel" class="small muted">Comparar con</label><select id="cmp-sel"></select></div>
+  <div class="scroll">
+    <table class="cmp">
+      <thead><tr><th></th><th id="cmp-a"></th><th id="cmp-b"></th></tr></thead>
+      <tbody id="cmp-body"></tbody>
+    </table>
+  </div>
+  <p class="small muted">Las dos columnas usan las mismas cantidades y comisiones que has puesto arriba.</p>
+</section>
+
+<section class="panel" id="past-panel">
+  <h2 id="t-past"></h2>
+  <p class="small muted">Poniéndolo todo de golpe, sin aportaciones mensuales ni comisiones.</p>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Si lo hubieras puesto hace</th><th>Hoy tendrías</th><th>Ganancia o pérdida</th></tr></thead>
+      <tbody id="past"></tbody>
+    </table>
+  </div>
+  <div class="facts" id="facts"></div>
+</section>
+
+<section class="panel" id="yr-panel">
+  <h2 id="t-yr"></h2>
+  <div class="facts" id="ipo-facts" hidden></div>
+  <div class="scroll"><div class="bars" id="bars"></div></div>
+  <p class="small muted" id="yr-note"></p>
+  <h2 id="t-live"></h2>
+  <p class="small muted">¿Quieres ver otra empresa? Pulsa el nombre de la empresa en la esquina de arriba a la izquierda del gráfico y escribe la que quieras, por ejemplo Inditex o Nintendo.</p>
+  <div class="tv" id="tv"></div>
+  <p class="small muted">Gráfico de TradingView. Necesita conexión a internet; los precios pueden llevar unos minutos de retraso.</p>
+</section>
+
+<section class="panel">
+  <h2>Cómo leerlo</h2>
+  <ul>
+    <li><strong>Si le va mal</strong> usa lo mucho que se ha movido la acción cada año. Cuanto más salta una empresa, más bajo queda este escenario.</li>
+    <li><strong>Si rinde como la bolsa</strong> supone un 7 % anual, una cifra prudente para la bolsa mundial a largo plazo.</li>
+    <li><strong>Si repite sus últimos 10 años</strong> aplica su ritmo medio de la última década. En empresas que han subido muchísimo, repetirlo es muy poco probable.</li>
+    <li>Las cifras son en dólares y con dividendos reinvertidos. No incluyen el cambio euro-dólar, comisiones ni impuestos.</li>
+  </ul>
+</section>
+
+</div>
+
+<div class="view" id="v-mercado" hidden>
+  <section class="panel">
+    <div class="cmp-head"><h2 id="mk-titulo"></h2><label for="mk-orden" class="small muted">Ordenar por</label><select id="mk-orden"></select></div>
+    <p class="small muted" id="mk-expl"></p>
+    <div class="mk-grid" id="mk-top5"></div>
+    <div class="warn">
+      <strong>Cómo leer esto.</strong> El precio objetivo es lo que cada analista cree que valdrá la acción dentro de un año. Los más altos suelen tocar a las empresas que más han caído, que también son las más arriesgadas. Los analistas fallan a menudo y tienden a ser optimistas: Apple, por ejemplo, ya cotiza por encima de su objetivo medio. Mira el potencial junto a la peor caída y al número de analistas, no solo el primer número.
+    </div>
+  </section>
+  <section class="panel">
+    <h2>Todas las empresas</h2>
+    <div class="scroll">
+      <table class="izq tabla-mk">
+        <thead><tr><th>#</th><th>Empresa</th><th>Consenso</th><th>Analistas</th><th>Dicen comprar</th><th>Precio</th><th>Objetivo medio</th><th>Potencial</th><th>Peor caída</th><th>Dato del</th></tr></thead>
+        <tbody id="mk-tabla"></tbody>
+      </table>
+    </div>
+    <p class="small muted" id="mk-fecha"></p>
+    <p class="small muted">El S&amp;P 500 no aparece porque es un fondo de 500 empresas y no tiene analistas propios. Estos datos no se actualizan solos: pídeme que los vuelva a buscar cuando quieras. Es información de terceros, no una recomendación.</p>
+  </section>
+</div>
+
+<div class="view" id="v-cartera" hidden>
+  <section class="panel">
+    <h2>Reparte tu dinero entre varias empresas</h2>
+    <div id="c-filas" class="filas"></div>
+    <div class="acciones"><button type="button" class="btn sec" id="c-add">Añadir empresa</button><strong id="c-total" class="num"></strong></div>
+    <div class="reparto" id="c-reparto"></div>
+    <p class="small muted" id="c-aviso" hidden></p>
+  </section>
+  <section class="panel" id="c-res">
+    <h2>Cuánto podría valer la mezcla</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr>
+          <th>Dentro de</th>
+          <th><b>Si le va mal</b>1 de cada 10 veces iría peor</th>
+          <th><b>Si rinde como la bolsa</b>un 7 % al año</th>
+          <th><b id="c-hot-t">Si repite 2016-2025</b><span id="c-hot"></span></th>
+        </tr></thead>
+        <tbody id="c-tabla"></tbody>
+      </table>
+    </div>
+    <div class="warn ok" id="c-nota" hidden></div>
+    <div class="facts" id="c-datos"></div>
+    <p class="small muted" id="c-pie"></p>
+  </section>
+</div>
+
+<div class="view" id="v-compras" hidden>
+  <section class="panel">
+    <div class="cmp-head"><h2>Lo que tienes</h2><button type="button" class="btn sec" id="p-auto">Actualizar precios</button></div>
+    <div class="facts" id="p-resumen"></div>
+    <p class="muted" id="p-vacio">Cuando apuntes tu primera compra, aquí verás cuántas acciones tienes, lo que te costaron y cuánto valen ahora.</p>
+    <div id="p-lista" hidden>
+      <div class="scroll">
+        <table class="izq tabla-pos">
+          <thead><tr><th>Empresa</th><th>Acciones</th><th>Coste medio</th><th>Precio actual (€)</th><th>Vale</th><th>Ganas o pierdes</th><th></th></tr></thead>
+          <tbody id="p-tabla"></tbody>
+        </table>
+      </div>
+      <p class="small muted">Escribe el precio actual de cada acción en euros (lo ves en la app de tu bróker) o pulsa Actualizar precios. Se usa el método FIFO: al vender, salen primero las acciones que compraste antes, como pide Hacienda.</p>
+    </div>
+    <p class="small" id="p-msg" aria-live="polite"></p>
+  </section>
+
+  <section class="panel">
+    <h2 id="t-form">Apuntar una operación</h2>
+    <form id="m-form" class="form" novalidate>
+      <div class="campo"><label for="m-fecha">Fecha</label><input type="date" id="m-fecha" required><span class="err" id="m-fecha-err"></span></div>
+      <div class="campo"><label for="m-tipo">Tipo</label><select id="m-tipo"><option value="compra">Compra</option><option value="venta">Venta</option></select></div>
+      <div class="campo"><label for="m-emp">Empresa</label><select id="m-emp"></select></div>
+      <div class="campo" id="m-otra-box" hidden><label for="m-otra">Nombre de la empresa</label><input type="text" id="m-otra" maxlength="40" autocomplete="off"><span class="err" id="m-otra-err"></span></div>
+      <div class="campo"><label for="m-acciones">Acciones</label><input type="number" id="m-acciones" min="0" step="any" inputmode="decimal" placeholder="0,25"><span class="err" id="m-acciones-err"></span></div>
+      <div class="campo"><label for="m-precio">Precio por acción (€)</label><input type="number" id="m-precio" min="0" step="any" inputmode="decimal" placeholder="160"><span class="err" id="m-precio-err"></span></div>
+      <div class="campo"><label for="m-importe">Importe (€)</label><input type="number" id="m-importe" min="0" step="0.01" inputmode="decimal" placeholder="40"><span class="err" id="m-importe-err"></span></div>
+      <div class="campo"><label for="m-comision">Comisión (€)</label><input type="number" id="m-comision" min="0" step="0.01" inputmode="decimal" value="1"><span class="err" id="m-comision-err"></span></div>
+      <div class="campo ancho"><label for="m-nota">Nota (opcional)</label><input type="text" id="m-nota" maxlength="80" placeholder="Por ejemplo: en Trade Republic" autocomplete="off"></div>
+      <div class="campo ancho"><div class="acciones">
+        <button type="submit" class="btn" id="m-guardar">Guardar operación</button>
+        <button type="button" class="btn sec" id="m-todo" hidden>Vender todo</button>
+        <button type="button" class="btn sec" id="m-cancelar" hidden>Cancelar</button>
+      </div></div>
+    </form>
+    <p class="small muted">Rellena dos de estos tres: acciones, precio o importe. El tercero se calcula solo. Están en la confirmación de la operación de tu bróker.</p>
+    <p class="small" id="m-msg" aria-live="polite"></p>
+  </section>
+
+  <section class="panel">
+    <h2>Mis operaciones</h2>
+    <div id="m-avisos" class="filas"></div>
+    <p class="muted" id="m-vacio">Todavía no has apuntado ninguna operación.</p>
+    <div id="m-lista" hidden>
+      <div class="scroll">
+        <table class="izq tabla-ops">
+          <thead><tr><th>Fecha</th><th>Empresa</th><th>Tipo</th><th>Acciones</th><th>Precio</th><th>Importe</th><th>Comisión</th><th></th></tr></thead>
+          <tbody id="m-tabla"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="acciones">
+      <button type="button" class="btn sec" id="m-csv">Exportar CSV</button>
+      <label class="btn sec" for="m-import">Importar CSV</label><input type="file" id="m-import" accept=".csv,text/csv" class="oculto">
+      <button type="button" class="btn sec" id="m-a-cartera">Probar mis posiciones en Probar reparto</button>
+    </div>
+    <p class="small muted">Para tener las mismas operaciones en el móvil y en el ordenador, exporta el CSV en uno e impórtalo en el otro: las repetidas se saltan.</p>
+  </section>
+
+  <details class="panel ajustes" id="ajustes">
+    <summary><h2>Copia de seguridad y precios automáticos</h2></summary>
+    <h3 class="sub">Copia de seguridad</h3>
+    <p class="small">Todo se guarda solo en este navegador. Si borras los datos del navegador, se pierde. Descarga una copia de vez en cuando.</p>
+    <div class="acciones">
+      <button type="button" class="btn sec" id="b-bajar">Descargar copia</button>
+      <label class="btn sec" for="b-subir">Restaurar copia</label><input type="file" id="b-subir" accept=".json,application/json" class="oculto">
+    </div>
+    <div class="acciones" id="b-confirmar" hidden>
+      <button type="button" class="btn" id="b-si">Sí, sustituir</button>
+      <button type="button" class="btn sec" id="b-no">Cancelar</button>
+    </div>
+    <p class="small" id="b-msg" aria-live="polite"></p>
+
+    <h3 class="sub">Precios automáticos (opcional)</h3>
+    <p class="small">Para que Actualizar precios funcione, crea una clave gratuita en <a href="https://finnhub.io/register" target="_blank" rel="noopener">finnhub.io</a> y pégala aquí. La clave se queda en este navegador y no entra en la copia de seguridad. Los precios en dólares se pasan a euros con el cambio del Banco Central Europeo.</p>
+    <div class="acciones">
+      <input type="text" id="aj-clave" class="clave" autocomplete="off" spellcheck="false" aria-label="Clave de Finnhub" placeholder="Tu clave de Finnhub">
+      <button type="button" class="btn sec" id="aj-guardar">Guardar clave</button>
+    </div>
+    <p class="small" id="aj-msg" aria-live="polite"></p>
+  </details>
+</div>
+
+<div class="view" id="v-renta" hidden>
+  <section class="panel">
+    <div class="cmp-head"><h2>Tus ventas para la renta</h2><label for="r-anio" class="small muted">Año</label><select id="r-anio"></select></div>
+    <p class="small muted" id="r-presenta"></p>
+    <div class="facts" id="r-resumen"></div>
+    <div id="r-avisos" class="filas"></div>
+    <p class="muted" id="r-vacio"></p>
+    <div id="r-lista" hidden>
+      <div class="scroll">
+        <table class="izq tabla-renta">
+          <thead><tr><th>Venta</th><th>Empresa</th><th>Acciones</th><th>Valor de venta</th><th>Coste de compra</th><th>Resultado</th></tr></thead>
+          <tbody id="r-tabla"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="acciones"><button type="button" class="btn sec" id="r-csv">Descargar para la gestora (CSV)</button></div>
+    <p class="small" id="r-msg" aria-live="polite"></p>
+  </section>
+  <section class="panel">
+    <h2>Cómo se calcula</h2>
+    <ul>
+      <li><strong>Valor de venta:</strong> lo que recibes al vender, menos la comisión de la venta.</li>
+      <li><strong>Coste de compra:</strong> lo que pagaste por esas acciones, comisiones incluidas. Si compraste en varias veces, salen primero las más antiguas (FIFO).</li>
+      <li><strong>Las pérdidas se restan</strong> de las ganancias del mismo año. Lo que sobre, en los cuatro años siguientes.</li>
+      <li><strong>No incluye dividendos ni intereses</strong>, que también se declaran. Vienen en el informe fiscal anual de tu bróker.</li>
+      <li>Es una estimación para que sepas qué esperar. La cifra buena es la del informe fiscal del bróker y la de tu gestora.</li>
+    </ul>
+  </section>
+</div>
+
+<div class="view" id="v-plan" hidden>
+  <section class="panel">
+    <h2>¿Cuánto tengo que poner al mes?</h2>
+    <div class="form form-plan">
+      <div class="campo"><label for="o-meta">Quiero llegar a (€)</label><input type="number" id="o-meta" min="1" step="100" value="10000" inputmode="decimal"></div>
+      <div class="campo"><label for="o-anios">En (años)</label><input type="number" id="o-anios" min="1" max="50" step="1" value="5" inputmode="numeric"></div>
+      <div class="campo"><label for="o-ya">Ya tengo (€)</label><input type="number" id="o-ya" min="0" step="10" value="0" inputmode="decimal"><button type="button" class="mini" id="o-usar">Usar lo que vale mi cartera</button></div>
+    </div>
+    <div id="o-res"></div>
+  </section>
+  <section class="panel">
+    <h2>Cómo repartir lo de este mes</h2>
+    <p class="small">Elige qué parte de tu dinero quieres en cada empresa. La web te dice cuánto comprar de cada una este mes para acercarte a ese reparto, teniendo en cuenta lo que ya tienes.</p>
+    <div class="form form-plan">
+      <div class="campo"><label for="x-mes">Este mes invierto (€)</label><input type="number" id="x-mes" min="0" step="10" value="250" inputmode="decimal"></div>
+      <div class="campo"><label for="x-fee">Comisión por compra (€)</label><input type="number" id="x-fee" min="0" step="0.5" value="1" inputmode="decimal"></div>
+    </div>
+    <h3 class="sub">Tu reparto</h3>
+    <p class="small muted">El que viene puesto es solo un ejemplo para que veas cómo funciona. Cámbialo por el tuyo.</p>
+    <div id="x-filas" class="filas"></div>
+    <div class="acciones"><button type="button" class="btn sec" id="x-add">Añadir empresa</button><strong id="x-suma" class="num"></strong></div>
+    <div id="x-res"></div>
+  </section>
+</div>
+
+<footer>
+  <p><strong>Esto no es asesoramiento financiero.</strong> Rentabilidades pasadas no garantizan las futuras. Una sola acción puede perder la mayor parte de su valor.</p>
+  <p>Fuentes: <a href="https://totalrealreturns.com/n/NVDA,AAPL,MSFT,GOOGL,AMZN,META,TSLA">Total Real Returns (Nvidia, Apple, Microsoft, Alphabet, Amazon, Meta, Tesla)</a>, <a href="https://totalrealreturns.com/n/AMD">AMD</a>, <a href="https://totalrealreturns.com/n/NFLX">Netflix</a>, <a href="https://totalrealreturns.com/n/BABA">Alibaba</a>, <a href="https://totalrealreturns.com/n/DIS">Disney</a>, <a href="https://totalrealreturns.com/n/KO">Coca-Cola</a>, <a href="https://totalrealreturns.com/n/SPY">S&amp;P 500</a>; ChartRow: <a href="https://chartrow.com/quote/sony/trailing-returns">Sony</a>, <a href="https://chartrow.com/quote/san/returns">Banco Santander</a>, <a href="https://chartrow.com/quote/ampx/growth">Amprius</a>; salida a bolsa de Anthropic: <a href="https://www.cnn.com/2026/11/19/business/live-news/anthropic-ipo">CNN</a>, <a href="https://www.cnbc.com/2026/11/18/anthropic-ipo-ai-offering-price.html">CNBC</a>.</p>
+</footer>
+</div>
+
+<script src="js/datos.js"></script>
+<script src="js/grafico-directo.js"></script>
+<script src="js/simulador.js"></script>
+<script src="js/cartera.js"></script>
+<script src="js/mercado-datos.js"></script>
+<script src="js/mercado.js"></script>
+<script src="js/inversiones.js"></script>
+<script src="js/compras.js"></script>
+<script src="js/renta.js"></script>
+<script src="js/plan.js"></script>
+<script src="js/pestanas.js"></script>
+</body>
+</html>
