@@ -210,3 +210,21 @@ table.tabla-mk{min-width:820px}
 .hist .marca{position:absolute;top:-24px;bottom:0;border-left:2px dashed var(--ink);pointer-events:none}
 .hist .marca em{position:absolute;top:0;left:4px;white-space:nowrap;font-style:normal;font-size:.75rem;color:var(--ink);background:var(--surface);padding:0 3px}
 .hist-ejes{display:flex;justify-content:space-between;margin:4px 0 8px;font-family:var(--mono)}
+
+/* ---------- Bot ---------- */
+.bt-graf svg{width:100%;height:220px;display:block}
+.bt-graf .g-base{stroke:var(--line);stroke-width:1.5;stroke-dasharray:4 4}
+.bt-graf .g-bot{fill:none;stroke:var(--accent);stroke-width:2.5;vector-effect:non-scaling-stroke}
+.bt-graf .g-spy{fill:none;stroke:var(--muted);stroke-width:2;vector-effect:non-scaling-stroke;opacity:.8}
+.bt-graf .g-base{vector-effect:non-scaling-stroke}
+.bt-ejes{display:flex;justify-content:space-between;gap:8px;margin-top:4px}
+.bt-leyenda{display:flex;gap:18px;flex-wrap:wrap;color:var(--muted)}
+.bt-leyenda i{display:inline-block;width:18px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.bt-leyenda .l-bot{background:var(--accent)} .bt-leyenda .l-spy{background:var(--muted)}
+.bt-lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.bt-lista li{padding:10px 12px;background:var(--bg);border-radius:8px;line-height:1.5}
+.bt-tag{display:inline-block;font-size:.72rem;font-weight:600;padding:1px 7px;border-radius:999px}
+.bt-tag.c{background:var(--accent-soft);color:var(--accent)} .bt-tag.v{background:var(--hot-soft);color:var(--hot)}
+.tabla-bt th:nth-child(n+2){text-align:right} .tabla-bt th:last-child{text-align:left}
+#v-bot .tabla-bt tbody tr td:last-child{text-align:left}
+.tabla-bt td.num{white-space:nowrap}

@@ -1,0 +1,68 @@
+name: Bot de inversión ficticia
+
+# Horas en UTC. En invierno, hora de España = UTC + 1 (en verano, + 2).
+# El bot comprueba en cada ejecución si la bolsa de EE. UU. está abierta: si no lo está, no opera.
+on:
+  schedule:
+    - cron: "0 14 * * 1-5"              # 15:00  preparar el día
+    - cron: "45 14,15,16,17,18 * * 1-5" # 15:45, 16:45, 17:45, 18:45, 19:45  operar
+    - cron: "30 20 * * 1-5"             # 21:30  operar (última antes del cierre)
+    - cron: "30 21 * * 1-5"             # 22:30  repasar el día y aprender
+    - cron: "0 9 * * 6"                 # sábado 10:00  resumen semanal
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: "Qué hacer"
+        type: choice
+        options: [operar, repasar, preparar, semanal]
+        default: operar
+      forzar:
+        description: "Ejecutar aunque la bolsa esté cerrada (para probar)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bot
+  cancel-in-progress: false
+
+jobs:
+  bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Elegir modo
+        id: modo
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "modo=${{ inputs.modo }}" >> "$GITHUB_OUTPUT"
+          else
+            case "${{ github.event.schedule }}" in
+              "0 14 * * 1-5") echo "modo=preparar" >> "$GITHUB_OUTPUT" ;;
+              "30 21 * * 1-5") echo "modo=repasar" >> "$GITHUB_OUTPUT" ;;
+              "0 9 * * 6") echo "modo=semanal" >> "$GITHUB_OUTPUT" ;;
+              *) echo "modo=operar" >> "$GITHUB_OUTPUT" ;;
+            esac
+          fi
+
+      - name: Ejecutar el bot
+        env:
+          FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
+        run: python3 bot/bot.py "${{ steps.modo.outputs.modo }}" ${{ inputs.forzar && '--forzar' || '' }}
+
+      - name: Guardar lo que ha hecho
+        run: |
+          git config user.name "bot-inversion"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A bot/
+          if git diff --cached --quiet; then echo "Nada que guardar"; exit 0; fi
+          git commit -m "Bot: ${{ steps.modo.outputs.modo }} $(date -u +'%Y-%m-%d %H:%M') UTC"
+          for i in 1 2 3; do
+            git pull --rebase --quiet && git push && exit 0
+            sleep 5
+          done
+          exit 1

@@ -24,6 +24,7 @@
   <a href="#compras">Mis inversiones</a>
   <a href="#renta">Renta</a>
   <a href="#plan">Plan</a>
+  <a href="#bot">Bot</a>
 </nav>
 
 <div class="view" id="v-simulador">
@@ -301,6 +302,35 @@
   </section>
 </div>
 
+<div class="view" id="v-bot" hidden>
+  <section class="panel">
+    <div class="cmp-head"><h2>Tu bot de inversión ficticia</h2><button type="button" class="mini" id="bt-recargar">Actualizar</button></div>
+    <p class="small muted">Opera solo, con 1.000 $ de mentira, entre unas 100 grandes empresas de EE. UU. más las tuyas. Cada señal que detecta la apunta y, a los 5 días, mira si habría ganado o perdido después de comisiones: así aprende qué reglas funcionan. Solo compra con las reglas que le han ido bien en al menos 15 casos. Se compara siempre con haber metido el mismo dinero en el S&amp;P 500.</p>
+    <div id="bt-estado" class="small"></div>
+    <div class="facts" id="bt-facts"></div>
+    <div id="bt-grafico" class="bt-graf" role="img"></div>
+    <div class="bt-leyenda small"><span><i class="l-bot"></i>Bot</span><span><i class="l-spy"></i>Mismo dinero en el S&amp;P 500</span></div>
+  </section>
+  <section class="panel">
+    <div class="cmp-head"><h2>Lo que tiene ahora</h2><button type="button" class="mini" id="bt-directo">Precios en directo</button></div>
+    <p class="small muted" id="bt-directo-msg"></p>
+    <div class="scroll"><table class="tabla-x tabla-bt"><thead><tr><th>Empresa</th><th>Compró</th><th>A</th><th>Ahora</th><th>Gana o pierde</th><th>Por qué</th></tr></thead><tbody id="bt-pos"></tbody></table></div>
+  </section>
+  <section class="panel">
+    <h2>Lo que va aprendiendo</h2>
+    <p class="small muted">Cada fila es una regla. «Casos» son las veces que se ha cumplido y ya se sabe cómo acabó; «De media» es lo que habría ganado o perdido cada vez, ya con comisiones.</p>
+    <div class="scroll"><table class="tabla-x tabla-bt"><thead><tr><th>Regla</th><th>Casos</th><th>De media</th><th>Acierta</th><th>Operaciones reales</th><th>Estado</th></tr></thead><tbody id="bt-reglas"></tbody></table></div>
+  </section>
+  <section class="panel">
+    <h2>Sus operaciones</h2>
+    <div id="bt-ops"></div>
+  </section>
+  <section class="panel">
+    <h2>Diario del bot</h2>
+    <div id="bt-diario"></div>
+  </section>
+</div>
+
 <footer>
   <p><strong>Esto no es asesoramiento financiero.</strong> Rentabilidades pasadas no garantizan las futuras. Una sola acción puede perder la mayor parte de su valor.</p>
   <p>Fuentes: <a href="https://totalrealreturns.com/n/NVDA,AAPL,MSFT,GOOGL,AMZN,META,TSLA">Total Real Returns (Nvidia, Apple, Microsoft, Alphabet, Amazon, Meta, Tesla)</a>, <a href="https://totalrealreturns.com/n/AMD">AMD</a>, <a href="https://totalrealreturns.com/n/NFLX">Netflix</a>, <a href="https://totalrealreturns.com/n/BABA">Alibaba</a>, <a href="https://totalrealreturns.com/n/DIS">Disney</a>, <a href="https://totalrealreturns.com/n/KO">Coca-Cola</a>, <a href="https://totalrealreturns.com/n/SPY">S&amp;P 500</a>; ChartRow: <a href="https://chartrow.com/quote/sony/trailing-returns">Sony</a>, <a href="https://chartrow.com/quote/san/returns">Banco Santander</a>, <a href="https://chartrow.com/quote/ampx/growth">Amprius</a>; salida a bolsa de Anthropic: <a href="https://www.cnn.com/2026/11/19/business/live-news/anthropic-ipo">CNN</a>, <a href="https://www.cnbc.com/2026/11/18/anthropic-ipo-ai-offering-price.html">CNBC</a>.</p>
@@ -317,6 +347,7 @@
 <script src="js/compras.js"></script>
 <script src="js/renta.js"></script>
 <script src="js/plan.js"></script>
+<script src="js/bot.js"></script>
 <script src="js/pestanas.js"></script>
 </body>
 </html>
