@@ -6,7 +6,7 @@ Web para simular antes de invertir, apuntar lo que compras y vendes, ver cuánto
 
 - **Simulador:** pones una cantidad (de golpe, cada mes o las dos) y una empresa, y ves tres escenarios a 1, 2, 3, 5 y 7 años, ya restados comisiones e impuestos. También lo que habría pasado de verdad, cómo le fue cada año, una comparación con otra empresa y su gráfico en directo. Debajo de los escenarios, **10.000 futuros posibles**: el ordenador simula 10.000 caminos mes a mes (subiendo y bajando tanto como la empresa en su historia y creciendo de media como la bolsa) y te dice en cuántos de cada 100 pierdes, el resultado más normal y en cuántos doblas el dinero.
   - **Anthropic** empezó a cotizar el 19/11/2026 y no tiene historia: eliges a qué empresa supones que se parece en subidas y bajadas. No sale en Probar reparto por la misma razón.
-- **Bot:** un bot que opera solo con 1.000 $ ficticios y aprende de sus resultados (ver abajo).
+- **Bot:** un bot que opera solo con 5.000 $ ficticios y aprende de sus resultados (ver abajo).
 - **Mercado:** lo que dicen los analistas de cada empresa (consenso, precio objetivo medio y su rango, cuántos dicen comprar) junto a su peor caída histórica. Las 5 primeras según el orden que elijas: más potencial según los analistas, más acuerdo entre ellos o menos caída en su historia. Datos buscados en stockanalysis.com.
 - **Probar reparto:** repartes dinero entre varias empresas y ves los escenarios de la mezcla.
 - **Mis inversiones:** apuntas cada compra y venta (acciones, precio, importe y comisión). Ves lo que tienes, lo que te costó, cuánto vale y cuánto ganas o pierdes. Puedes editar y borrar operaciones, importar y exportar CSV y hacer copias de seguridad.

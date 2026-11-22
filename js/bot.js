@@ -31,6 +31,7 @@
   }
 
   function pintar(){
+    $("bt-capital").textContent=usd(D.capital);
     var u=D.ultima,est=$("bt-estado");
     var modos={operar:"miró el mercado",repasar:"repasó el día",preparar:"preparó el día",semanal:"hizo el resumen semanal"};
     if(u){var t=new Date(u.cuando);var hace=Math.round((Date.now()-t.getTime())/60000);
@@ -62,7 +63,7 @@
     g.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" aria-hidden="true">'+
       '<line x1="'+PL+'" x2="'+(W-PR)+'" y1="'+base+'" y2="'+base+'" class="g-base"/>'+
       '<path d="'+linea(2)+'" class="g-spy"/><path d="'+linea(1)+'" class="g-bot"/></svg>'+
-      '<div class="bt-ejes small muted"><span>'+fecha(c[0][0])+'</span><span>línea gris: los 1.000 $ del principio</span><span>'+(c[c.length-1][0].indexOf("ahora")>-1?"ahora":fecha(c[c.length-1][0]))+'</span></div>';
+      '<div class="bt-ejes small muted"><span>'+fecha(c[0][0])+'</span><span>línea gris: los '+usd(D.capital)+' del principio</span><span>'+(c[c.length-1][0].indexOf("ahora")>-1?"ahora":fecha(c[c.length-1][0]))+'</span></div>';
     g.setAttribute("aria-label","Evolución del bot frente al S&P 500: el bot tiene "+usd(v.bot)+" y el índice "+usd(v.spy));
   }
 
