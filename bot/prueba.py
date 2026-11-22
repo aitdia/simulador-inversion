@@ -128,8 +128,9 @@ def main():
 
     # 2) Recorrido día a día
     INICIO = 252          # el primer año solo aprende
-    est = {}
+    est, rec = {}, {}
     efectivo, pos, ops = float(cap), {}, []
+    sec = cfg.get("sectores", {})
     curva, ult = [], {}
     p0 = adj["SPY"][INICIO]
     u_spy = (cap - com) / p0
@@ -138,10 +139,10 @@ def main():
     invertido = 0.0
     aparcado = 0.0          # participaciones del S&P 500 donde deja el dinero que no usa
     for t in range(N):
-        motor.olvidar(est)
+        motor.olvidar(est, rec)
         while revelar and revelar[0][0] <= t - 1:
             _, rid, reg, sid, rend = heapq.heappop(revelar)
-            motor.anotar(est, rid, reg, sid, rend)
+            motor.anotar(est, rid, reg, sid, rend, rec)
         for s in adj:
             if adj[s][t] is not None:
                 ult[s] = adj[s][t]
@@ -170,12 +171,17 @@ def main():
         cands = []
         total += aparcado * adj["SPY"][t]
         for s, rid in senales_dia[t]:
-            f = motor.fiable(est, rid, regs[t])
+            f = motor.fiable(est, rid, regs[t], rec)
             if f:
                 cands.append((f[0], s, rid, f[1]))
         cands.sort(reverse=True)
         for punt, s, rid, sid in cands:
             if s in pos or s in vendidas or len(pos) >= cfg["max_posiciones"]:
+                continue
+            # repartir el riesgo: pocas empresas por regla y por sector
+            if sum(1 for q in pos.values() if q["regla"] == rid) >= cfg.get("max_por_regla", 99):
+                continue
+            if sec.get(s) != "Índice" and sum(1 for x in pos if sec.get(x) == sec.get(s)) >= cfg.get("max_por_sector", 99):
                 continue
             gasto = total / cfg["max_posiciones"]
             if efectivo < gasto and aparcado > 0:      # saca del S&P 500 lo que le falta
@@ -235,7 +241,7 @@ def main():
         "peor_caida": {"bot": max_caida(serie(1)), "spy": max_caida(serie(2)), "iguales": max_caida(serie(3))},
         "operaciones": len(ops), "ganadoras": len(ganadoras),
         "media_operacion": sum(o["pct"] for o in ops) / len(ops) if ops else 0,
-        "en_acciones": invertido / max(1, n), "aparca_en_indice": bool(cfg.get("aparcar_en_indice")),
+        "en_acciones": invertido / max(1, n), "max_por_regla": cfg.get("max_por_regla"), "max_por_sector": cfg.get("max_por_sector"), "aparca_en_indice": bool(cfg.get("aparcar_en_indice")),
         "mejor": max(ops, key=lambda o: o["pct"]) if ops else None,
         "peor": min(ops, key=lambda o: o["pct"]) if ops else None,
         "anios": años, "por_regla": por_regla,
@@ -256,7 +262,7 @@ def main():
     # 4) Arrancar el bot en vivo con lo aprendido
     while revelar and revelar[0][0] <= N - 1:     # lo que ya se sabe al cierre del último día
         _, rid, reg, sid, rend = heapq.heappop(revelar)
-        motor.anotar(est, rid, reg, sid, rend)
+        motor.anotar(est, rid, reg, sid, rend, rec)
     fd = os.path.join(AQUI, "datos.json")
     with open(fd, encoding="utf-8") as f:
         d = json.load(f)
@@ -265,6 +271,7 @@ def main():
     ultimo = cal[-1]
     d["version"] = 2
     d["est"] = {k: [round(x, 4) for x in v] for k, v in est.items()}
+    d["rec"] = {k: [round(x, 4) for x in v] for k, v in rec.items()}
     d["sombra"] = [x for x in pendientes if x["fecha"] > cal[max(0, N - motor.MAX_DIAS - 5)]]
     d["reales"] = {}
     d.pop("reglas", None)
@@ -281,7 +288,7 @@ def main():
                     "unidades": {s: (d["capital"] / len(mias) - com) / precio[s] for s in mias}}
     vi = sum(u * precio[s] for s, u in d["iguales"]["unidades"].items())
     d["curva"] = [[ultimo, round(d["efectivo"], 2), round(d["indice"]["unidades"] * precio["SPY"], 2), round(vi, 2)]]
-    d["resumen_reglas"] = motor.resumen_reglas(est)
+    d["resumen_reglas"] = motor.resumen_reglas(est, rec)
     d["ultima"] = {"cuando": datetime.now(NY).isoformat(timespec="minutes"), "modo": "aprender",
                    "nota": "Ha aprendido de 10 años de historia (%s a %s). %d reglas fiables en mercado %s." % (
                        cal[0], ultimo, sum(1 for r in d["resumen_reglas"].values() if r.get(d["regimen"], {}).get("fiable")), d["regimen"])}

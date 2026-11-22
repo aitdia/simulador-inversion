@@ -8,7 +8,9 @@ Ideas clave
   COMPARADO con haber tenido el S&P 500 esos mismos días. Una regla solo vale si gana al índice:
   si no, comprar a ciegas en un mercado que sube también "ganaría".
 - Olvido gradual: cada día de bolsa lo aprendido pesa un poco menos, así se adapta si el mercado cambia.
-- Solo se fía de una regla con al menos CASOS_MINIMOS casos y ganancia media positiva (con freno a la suerte).
+- Dos memorias: la larga (olvida despacio, años) y la corta (olvida rápido, meses).
+  Solo se fía de una regla si gana al índice en LAS DOS: a largo plazo y también últimamente.
+  Así una regla que solo funcionó en una época concreta (suerte) no se usa.
 """
 
 # ---------------------------------------------------------------- formas de vender
@@ -22,8 +24,10 @@ for _g in GANANCIAS:
             SALIDAS["g%d_p%d_d%d" % (_g * 100, _p * 100, _d)] = (_g, _p, _d)
 MAX_DIAS = max(DIAS)
 
-OLVIDO = 0.999          # cada día de bolsa, lo aprendido se multiplica por esto (vida media ~2,7 años de bolsa)
-CASOS_MINIMOS = 30      # casos (ya con olvido) para fiarse de una regla
+OLVIDO = 0.999          # memoria larga: cada día de bolsa lo aprendido se multiplica por esto (vida media ~2,7 años)
+OLVIDO_CORTO = 0.997    # memoria corta: vida media ~230 días de bolsa (unos 11 meses)
+CASOS_MINIMOS = 30      # casos (ya con olvido) en la memoria larga para fiarse de una regla
+CASOS_RECIENTES = 10    # casos en la memoria corta
 FRENO = 10              # casos imaginarios con resultado 0 que se suman, para no fiarse de la suerte
 SEPARACION = MAX_DIAS   # días mínimos entre dos casos de la misma regla y empresa
 
@@ -145,19 +149,24 @@ def clave(regla, reg, sid):
     return "%s|%s|%s" % (regla, reg, sid)
 
 
-def anotar(est, regla, reg, sid, rend):
-    e = est.setdefault(clave(regla, reg, sid), [0.0, 0.0, 0.0])
-    e[0] += 1
-    e[1] += rend
-    e[2] += 1 if rend > 0 else 0
+def anotar(est, regla, reg, sid, rend, rec=None):
+    for m in (est, rec):
+        if m is None:
+            continue
+        e = m.setdefault(clave(regla, reg, sid), [0.0, 0.0, 0.0])
+        e[0] += 1
+        e[1] += rend
+        e[2] += 1 if rend > 0 else 0
 
 
-def olvidar(est, veces=1):
-    f = OLVIDO ** veces
-    for e in est.values():
-        e[0] *= f
-        e[1] *= f
-        e[2] *= f
+def olvidar(est, rec=None):
+    for m, f in ((est, OLVIDO), (rec, OLVIDO_CORTO)):
+        if m is None:
+            continue
+        for e in m.values():
+            e[0] *= f
+            e[1] *= f
+            e[2] *= f
 
 
 def puntuacion(e):
@@ -168,6 +177,24 @@ def _junta(est, regla, sid):
     a = est.get(clave(regla, "alcista", sid), [0, 0, 0])
     b = est.get(clave(regla, "bajista", sid), [0, 0, 0])
     return [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
+
+
+def _stats(m, regla, reg, sid):
+    if reg == "todos":
+        return _junta(m, regla, sid)
+    return m.get(clave(regla, reg, sid), [0, 0, 0])
+
+
+def _pasa(est, rec, regla, reg, sid):
+    """La forma de vender pasa si gana al índice a largo plazo y, si hay memoria corta, también últimamente."""
+    e = _stats(est, regla, reg, sid)
+    if e[0] < CASOS_MINIMOS or puntuacion(e) <= 0:
+        return None
+    if rec is not None:
+        r = _stats(rec, regla, reg, sid)
+        if r[0] < CASOS_RECIENTES or puntuacion(r) <= 0:
+            return None
+    return (puntuacion(e), sid, e, reg)
 
 
 def mejor_salida(est, regla, reg):
@@ -192,27 +219,43 @@ def mejor_salida(est, regla, reg):
     return mejor
 
 
-def fiable(est, regla, reg):
-    m = mejor_salida(est, regla, reg)
-    return m if m and m[0] > 0 else None
+def fiable(est, regla, reg, rec=None):
+    """La mejor forma de vender que gana al índice en las dos memorias, en este tipo de mercado
+    (o en los dos juntos si en este aún no hay casos). Devuelve (puntuación, sid, stats, mercado) o None."""
+    for donde in (reg, "todos"):
+        hay_casos = any(_stats(est, regla, donde, sid)[0] >= CASOS_MINIMOS for sid in SALIDAS)
+        if not hay_casos:
+            continue
+        mejores = [x for x in (_pasa(est, rec, regla, donde, sid) for sid in SALIDAS) if x]
+        return max(mejores, key=lambda x: x[0]) if mejores else None
+    return None
 
 
-def resumen_reglas(est):
-    """Para la web: por regla y tipo de mercado, su mejor forma de vender, cuántos casos y si se fía."""
+def resumen_reglas(est, rec=None):
+    """Para la web: por regla y tipo de mercado, su forma de vender, cuántos casos, cómo va a largo plazo
+    y últimamente, y si se fía."""
     out = {}
     for rid, nombre, _ in REGLAS:
         fila = {"nombre": nombre}
         for reg in REGIMENES:
-            m = None
-            for sid in SALIDAS:
-                e = est.get(clave(rid, reg, sid))
-                if e and e[0] > 0 and (m is None or puntuacion(e) > m[0]):
-                    m = (puntuacion(e), sid, e)
-            if m:
-                e = m[2]
-                f = fiable(est, rid, reg)
-                fila[reg] = {"casos": round(e[0], 1), "media": round(e[1] / e[0], 5),
-                             "acierta": round(e[2] / e[0], 3), "salida": (f[1] if f else m[1]),
-                             "fiable": bool(f)}
+            f = fiable(est, rid, reg, rec)
+            if f:
+                sid = f[1]
+            else:
+                cand = [(puntuacion(est[clave(rid, reg, s)]), s) for s in SALIDAS
+                        if est.get(clave(rid, reg, s)) and est[clave(rid, reg, s)][0] > 0]
+                if not cand:
+                    continue
+                sid = max(cand)[1]
+            e = est.get(clave(rid, reg, sid), [0, 0, 0])
+            if e[0] <= 0:
+                continue
+            x = {"casos": round(e[0], 1), "media": round(e[1] / e[0], 5), "acierta": round(e[2] / e[0], 3),
+                 "salida": sid, "fiable": bool(f)}
+            if rec is not None:
+                r = rec.get(clave(rid, reg, sid), [0, 0, 0])
+                x["rec_casos"] = round(r[0], 1)
+                x["rec_media"] = round(r[1] / r[0], 5) if r[0] > 0 else None
+            fila[reg] = x
         out[rid] = fila
     return out

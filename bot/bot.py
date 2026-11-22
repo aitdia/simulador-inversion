@@ -139,7 +139,8 @@ def _escribir(ruta, obj):
 def guardar(d, con_historial):
     d["operaciones"] = d["operaciones"][-MAX_OPS:]
     d["resumenes"] = d["resumenes"][-MAX_RESUMENES:]
-    d["est"] = {k: [round(x, 4) for x in v] for k, v in d["est"].items()}
+    for m in ("est", "rec"):
+        d[m] = {k: [round(x, 4) for x in v] for k, v in d.get(m, {}).items()}
     hist = d.pop("historial")
     _escribir(F_DATOS, d)
     if con_historial:
@@ -281,7 +282,7 @@ def operar(cfg, d, fuente, forzar=False):
                 d["sombra"].append({"sym": s, "regla": rid, "regimen": reg, "fecha": fecha, "precio": q["c"],
                                     "spy": spy["c"], "faltan": list(motor.SALIDAS)})
                 abiertas.add((s, rid))
-            f = motor.fiable(d["est"], rid, reg)
+            f = motor.fiable(d["est"], rid, reg, d.setdefault("rec", {}))
             if f:
                 cands.append((f[0], s, rid, f))
 
@@ -289,8 +290,14 @@ def operar(cfg, d, fuente, forzar=False):
     cands.sort(key=lambda x: -x[0])
     tam = valor_total(d) / cfg["max_posiciones"]
     vendidas_hoy = {o["sym"] for o in d["operaciones"] if o["fecha"] == fecha and o["tipo"] == "venta"}
+    sec = cfg.get("sectores", {})
     for _, s, rid, f in cands:
         if s in d["posiciones"] or s in vendidas_hoy or len(d["posiciones"]) >= cfg["max_posiciones"]:
+            continue
+        # repartir el riesgo: pocas empresas por regla y por sector
+        if sum(1 for q in d["posiciones"].values() if q["regla"] == rid) >= cfg.get("max_por_regla", 99):
+            continue
+        if sec.get(s) != "Índice" and sum(1 for x in d["posiciones"] if sec.get(x) == sec.get(s)) >= cfg.get("max_por_sector", 99):
             continue
         gasto = min(tam, d["efectivo"])
         if gasto < cfg["minimo_compra"]:
@@ -300,7 +307,7 @@ def operar(cfg, d, fuente, forzar=False):
         _, sid, e, de = f
         d["efectivo"] -= gasto
         d["posiciones"][s] = {"acciones": acciones, "precio": precio, "coste": gasto, "fecha": fecha,
-                              "regla": rid, "salida": sid, "regimen": reg}
+                              "regla": rid, "salida": sid, "regimen": reg, "sector": sec.get(s, "")}
         donde = "Con el mercado %s" % reg if de == reg else "Contando los dos tipos de mercado"
         d["operaciones"].append({"fecha": fecha, "hora": hora, "tipo": "compra", "sym": s, "acciones": round(acciones, 6),
                                  "precio": r2(precio), "importe": r2(gasto - com), "comision": com, "regla": rid,
@@ -328,7 +335,7 @@ def repasar(cfg, d, fuente, forzar=False):
         return "Hoy no ha habido bolsa (festivo); no repaso."
     dia_nuevo = not d["historial"].get("SPY") or d["historial"]["SPY"][-1][0] < fecha
     if dia_nuevo:
-        motor.olvidar(d["est"])          # cada día de bolsa, lo aprendido pesa un poco menos
+        motor.olvidar(d["est"], d.setdefault("rec", {}))   # cada día de bolsa, lo aprendido pesa un poco menos
     for s, q in qs.items():
         d["precios"][s] = q
         h = d["historial"].setdefault(s, [])
@@ -357,14 +364,14 @@ def repasar(cfg, d, fuente, forzar=False):
             if r is None:
                 siguen.append(sid)
             else:
-                motor.anotar(d["est"], x["regla"], x["regimen"], sid, r[0])
+                motor.anotar(d["est"], x["regla"], x["regimen"], sid, r[0], d.setdefault("rec", {}))
                 aprendidas += 1
         if siguen:
             x["faltan"] = siguen
             quedan.append(x)
     d["sombra"] = quedan
     d["regimen"] = motor.regimen(cierres(d, "SPY")[:-1], spy["c"])
-    d["resumen_reglas"] = motor.resumen_reglas(d["est"])
+    d["resumen_reglas"] = motor.resumen_reglas(d["est"], d.setdefault("rec", {}))
 
     vb, vi, vg = valor_total(d), valor_indice(d), valor_iguales(d)
     if d["curva"] and d["curva"][-1][0] == fecha:

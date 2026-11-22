@@ -87,8 +87,9 @@
 
   function celda(x){
     if(!x)return '<td class="num muted">sin casos</td>';
-    var est=x.fiable?'<span class="up">fiable</span>':x.casos<30?'<span class="muted">pocos casos</span>':'<span class="down">no gana</span>';
-    return '<td class="num"><b class="'+cls(x.media)+'">'+pc(x.media)+'</b><span class="d small">'+Math.round(x.casos)+' casos · '+est+'</span></td>';
+    var est=x.fiable?'<span class="up">fiable</span>':x.casos<30?'<span class="muted">pocos casos</span>':x.media>0?'<span class="down">últimamente no</span>':'<span class="down">no gana</span>';
+    var ult=x.rec_media===null||x.rec_media===undefined?"":'<span class="d small">últimamente <span class="'+cls(x.rec_media)+'">'+pc(x.rec_media)+'</span> ('+Math.round(x.rec_casos)+')</span>';
+    return '<td class="num"><b class="'+cls(x.media)+'">'+pc(x.media)+'</b><span class="d small">'+Math.round(x.casos)+' casos · '+est+'</span>'+ult+'</td>';
   }
   function reglas(){
     var r=D.resumen_reglas||{},reg=D.regimen||"alcista";$("bt-reg-txt").textContent=reg;
@@ -137,8 +138,11 @@
     $("pr-ojo").innerHTML='<b>Ojo, este resultado es optimista.</b> '+
       '1) Las empresas que vigila son las grandes de <i>hoy</i>: hace 10 años nadie sabía que lo serían, y las que se hundieron por el camino no están en la lista. '+
       '2) «Tus empresas» las has elegido sabiendo cómo les ha ido (Nvidia, AMD…), así que esa línea parece mejor de lo que habría sido de verdad. '+
-      '3) Hay mucha suerte: al cambiar un detalle mínimo del bot (no volver a comprar el mismo día lo que acaba de vender), el resultado de los 10 años pasó de unos 16.000 $ a casi 20.000 $. '+
-      'Por eso lo que cuenta de verdad es cómo le vaya a partir de ahora, con dinero ficticio, frente al S&amp;P 500.';
+      '3) Hay mucha suerte: detalles mínimos del bot cambian mucho el resultado de los 10 años. '+
+      'Por eso lo que cuenta de verdad es cómo le vaya a partir de ahora, con dinero ficticio, frente al S&amp;P 500.'+
+      (P.variantes?'<div class="scroll" style="margin-top:10px"><table class="tabla-x tabla-bt"><thead><tr><th>Versión del bot (misma prueba de 10 años)</th><th>Acaba con</th><th>Peor caída</th></tr></thead><tbody>'+
+        P.variantes.filas.map(function(v){return '<tr><td>'+esc(v[0])+'</td><td class="num">'+usd0(v[1])+'</td><td class="num down">'+pc(v[2])+'</td></tr>';}).join("")+
+        '<tr><td class="small muted" colspan="3">S&amp;P 500 en la misma prueba: '+usd0(f.spy)+'. Cuanto más se protege el bot contra la suerte y contra jugárselo todo a una carta, menos gana: señal de que lo que ganaba de más era sobre todo suerte.</td></tr></tbody></table></div>':'');
   }
 
   function enDirecto(){
