@@ -34,6 +34,7 @@
     if(bloq<0)av.push("Tienes "+I.eur.format(-bloq)+" de pérdidas bloqueadas por la regla de los dos meses: compraste acciones de la misma empresa dos meses antes o después de venderlas con pérdida. Esa pérdida se podrá restar cuando vendas esas acciones nuevas.");
     if(neto<0)av.push("Este año sales en pérdidas. Lo que no compenses se puede restar de las ganancias de los cuatro años siguientes.");
     if(r.errores.length)av.push("Hay ventas de más acciones de las que tenías. Revisa Mis inversiones: el cálculo de ese año puede no ser correcto.");
+    if(r.sinCambio&&r.sinCambio.length)av.push(r.sinCambio.length+(r.sinCambio.length===1?" operación en dólares no tiene":" operaciones en dólares no tienen")+" el cambio de su día y no se cuentan aquí. Complétalas en Mis inversiones.");
     if(r.sinAcciones.length)av.push(r.sinAcciones.length+(r.sinAcciones.length===1?" operación no tiene":" operaciones no tienen")+" acciones ni precio y no se cuentan aquí. Complétalas en Mis inversiones.");
     $("r-avisos").innerHTML=av.map(function(t){return '<div class="warn">'+I.esc(t)+'</div>';}).join("");
   }

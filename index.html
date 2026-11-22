@@ -172,11 +172,12 @@
     <div id="p-lista" hidden>
       <div class="scroll">
         <table class="izq tabla-pos">
-          <thead><tr><th>Empresa</th><th>Acciones</th><th>Coste medio</th><th>Precio actual (€)</th><th>Vale</th><th>Ganas o pierdes</th><th></th></tr></thead>
+          <thead><tr><th>Empresa</th><th>Acciones</th><th>Coste medio</th><th>Precio actual</th><th>Vale</th><th>Ganas o pierdes</th><th></th></tr></thead>
           <tbody id="p-tabla"></tbody>
         </table>
       </div>
-      <p class="small muted">Escribe el precio actual de cada acción en euros (lo ves en la app de tu bróker) o pulsa Actualizar precios. Se usa el método FIFO: al vender, salen primero las acciones que compraste antes, como pide Hacienda.</p>
+      <p class="small muted" id="p-cambio"></p>
+      <p class="small muted">Escribe el precio actual de cada acción en la misma moneda en que la compraste (lo ves en la app de tu bróker) o pulsa Actualizar precios. Lo que vale y lo que ganas se ve siempre en euros. Se usa el método FIFO: al vender, salen primero las acciones que compraste antes, como pide Hacienda.</p>
     </div>
     <p class="small" id="p-msg" aria-live="polite"></p>
   </section>
@@ -187,10 +188,12 @@
       <div class="campo"><label for="m-fecha">Fecha</label><input type="date" id="m-fecha" required><span class="err" id="m-fecha-err"></span></div>
       <div class="campo"><label for="m-tipo">Tipo</label><select id="m-tipo"><option value="compra">Compra</option><option value="venta">Venta</option></select></div>
       <div class="campo"><label for="m-emp">Empresa</label><select id="m-emp"></select></div>
+      <div class="campo"><label for="m-moneda">Moneda del precio</label><select id="m-moneda"><option value="USD">Dólares ($)</option><option value="EUR">Euros (€)</option></select></div>
       <div class="campo" id="m-otra-box" hidden><label for="m-otra">Nombre de la empresa</label><input type="text" id="m-otra" maxlength="40" autocomplete="off"><span class="err" id="m-otra-err"></span></div>
       <div class="campo"><label for="m-acciones">Acciones</label><input type="number" id="m-acciones" min="0" step="any" inputmode="decimal" placeholder="0,25"><span class="err" id="m-acciones-err"></span></div>
-      <div class="campo"><label for="m-precio">Precio por acción (€)</label><input type="number" id="m-precio" min="0" step="any" inputmode="decimal" placeholder="160"><span class="err" id="m-precio-err"></span></div>
-      <div class="campo"><label for="m-importe">Importe (€)</label><input type="number" id="m-importe" min="0" step="0.01" inputmode="decimal" placeholder="40"><span class="err" id="m-importe-err"></span></div>
+      <div class="campo"><label for="m-precio">Precio por acción (<span class="m-sim">$</span>)</label><input type="number" id="m-precio" min="0" step="any" inputmode="decimal" placeholder="160"><span class="err" id="m-precio-err"></span></div>
+      <div class="campo"><label for="m-importe">Importe (<span class="m-sim">$</span>)</label><input type="number" id="m-importe" min="0" step="0.01" inputmode="decimal" placeholder="40"><span class="err" id="m-importe-err"></span></div>
+      <div class="campo" id="m-cambio-box"><label for="m-cambio">Cambio ese día (€ por 1 $)</label><input type="number" id="m-cambio" min="0" step="any" inputmode="decimal" placeholder="0,91"><span class="d small muted" id="m-cambio-info"></span><span class="err" id="m-cambio-err"></span></div>
       <div class="campo"><label for="m-comision">Comisión (€)</label><input type="number" id="m-comision" min="0" step="0.01" inputmode="decimal" value="1"><span class="err" id="m-comision-err"></span></div>
       <div class="campo ancho"><label for="m-nota">Nota (opcional)</label><input type="text" id="m-nota" maxlength="80" placeholder="Por ejemplo: en Trade Republic" autocomplete="off"></div>
       <div class="campo ancho"><div class="acciones">
@@ -199,7 +202,7 @@
         <button type="button" class="btn sec" id="m-cancelar" hidden>Cancelar</button>
       </div></div>
     </form>
-    <p class="small muted">Rellena dos de estos tres: acciones, precio o importe. El tercero se calcula solo. Están en la confirmación de la operación de tu bróker.</p>
+    <p class="small muted">Rellena dos de estos tres: acciones, precio o importe. El tercero se calcula solo. Ponlos en la moneda en que te los enseña tu bróker (en Revolut, las acciones de EE. UU. salen en dólares). Para Hacienda la web lo pasa a euros con el cambio oficial del BCE de ese día, que se rellena solo; si tu bróker te dice el cambio exacto que aplicó, puedes poner ese.</p>
     <p class="small" id="m-msg" aria-live="polite"></p>
   </section>
 

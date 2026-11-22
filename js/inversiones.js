@@ -2,7 +2,10 @@
 // las pestañas Mis inversiones, Renta y Plan.
 //
 // Cada operación: {id, fecha "AAAA-MM-DD", tipo "compra"|"venta", emp (id de datos.js u "otra"),
-//                  nombre (si es "otra"), acciones, precio (€ por acción), importe (€), comision (€), nota}
+//                  nombre (si es "otra"), acciones, precio y importe en su moneda, moneda "EUR"|"USD",
+//                  cambio (euros por 1 dólar ese día, solo si es USD), comision (€), nota}
+// Las operaciones antiguas no tienen moneda: se tratan como euros.
+// Para Hacienda todo se pasa a euros con el cambio del día de cada operación.
 // Las ganancias se calculan con el método FIFO (primero en entrar, primero en salir),
 // que es el que exige Hacienda en España para acciones iguales.
 (function(){
@@ -38,9 +41,38 @@
     return !!ok;
   };
 
+  // ---------- Monedas ----------
+  INV.moneda=function(o){return o&&o.moneda==="USD"?"USD":"EUR";};
+  // Euros por cada unidad de la moneda de la operación (null si falta el cambio de un dólar).
+  INV.factor=function(o){return INV.moneda(o)==="USD"?(o.cambio>0?o.cambio:null):1;};
+  // Cambio de hoy: euros por 1 dólar.
+  INV.cambioHoy=function(){var c=INV.ajustes.cambio;return c&&c.valor>0?c.valor:null;};
+  // Busca el cambio oficial del BCE de una fecha (o del último día con cambio antes de ella).
+  // Devuelve una promesa con {valor: euros por dólar, fecha}.
+  INV.tipoCambio=function(fecha){
+    var url="https://data-api.ecb.europa.eu/service/data/EXR/D.USD.EUR.SP00.A?format=csvdata&lastNObservations=1&endPeriod="+encodeURIComponent(fecha);
+    return fetch(url).then(function(r){if(!r.ok)throw new Error("bce");return r.text();}).then(function(t){
+      var l=t.trim().split(/\r?\n/);if(l.length<2)throw new Error("bce");
+      var cab=l[0].split(","),fila=l[l.length-1].split(",");
+      var v=parseFloat(fila[cab.indexOf("OBS_VALUE")]),f=fila[cab.indexOf("TIME_PERIOD")];
+      if(!(v>0))throw new Error("bce");
+      return {valor:Math.round(1/v*1e6)/1e6,fecha:f};
+    }).catch(function(){
+      return fetch("https://api.frankfurter.dev/v1/"+encodeURIComponent(fecha)+"?base=USD&symbols=EUR").then(function(r){if(!r.ok)throw new Error("fx");return r.json();})
+        .then(function(j){if(!(j&&j.rates&&j.rates.EUR>0))throw new Error("fx");return {valor:j.rates.EUR,fecha:j.date};});
+    });
+  };
+  // Actualiza el cambio de hoy si no es de hoy (en segundo plano).
+  INV.refrescarCambio=function(){
+    var c=INV.ajustes.cambio;if(c&&c.consultado===INV.hoy())return Promise.resolve(c);
+    return INV.tipoCambio(INV.hoy()).then(function(x){INV.ajustes.cambio={valor:x.valor,fecha:x.fecha,consultado:INV.hoy()};INV.guardar();return x;}).catch(function(){return null;});
+  };
+
   // Utilidades de formato compartidas.
   INV.eur=new Intl.NumberFormat("es-ES",{style:"currency",currency:"EUR",minimumFractionDigits:2,maximumFractionDigits:2,useGrouping:"always"});
   INV.eur0=new Intl.NumberFormat("es-ES",{style:"currency",currency:"EUR",maximumFractionDigits:0,useGrouping:"always"});
+  var usdF=new Intl.NumberFormat("es-ES",{minimumFractionDigits:2,maximumFractionDigits:2,useGrouping:"always"});
+  INV.mon=function(x,moneda){return moneda==="USD"?usdF.format(x)+" $":INV.eur.format(x);};
   INV.num=function(x,dec){return x.toLocaleString("es-ES",{maximumFractionDigits:dec===undefined?4:dec,useGrouping:"always"});};
   INV.pct=function(x){return (x>0?"+":"")+x.toLocaleString("es-ES",{maximumFractionDigits:1})+" %";};
   INV.esc=function(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});};
@@ -73,26 +105,29 @@
       if(a.o.tipo!==b.o.tipo)return a.o.tipo==="compra"?-1:1;   // el mismo día, primero las compras
       return a.i-b.i;
     });
-    var lotes={},info={},ventas=[],errores=[],sinAcciones=[];
+    var lotes={},info={},ventas=[],errores=[],sinAcciones=[],sinCambio=[];
     lista.forEach(function(x){
       var o=x.o,k=INV.clave(o);
-      info[k]={nombre:INV.nombre(o),emp:o.emp};
+      if(!info[k])info[k]={nombre:INV.nombre(o),emp:o.emp,moneda:INV.moneda(o)};
+      var f=INV.factor(o);
+      if(f===null){sinCambio.push(o);return;}
       if(!(o.acciones>0)){sinAcciones.push(o);return;}
       var L=lotes[k]=lotes[k]||[];
       if(o.tipo==="compra"){
-        L.push({fecha:o.fecha,acciones:o.acciones,coste:o.importe+o.comision});
+        L.push({fecha:o.fecha,acciones:o.acciones,coste:o.importe*f+o.comision,costeMon:o.importe});
         return;
       }
       var quedan=o.acciones,coste=0;
       while(quedan>1e-9&&L.length){
         var l=L[0],usa=Math.min(quedan,l.acciones),parte=l.coste*usa/l.acciones;
+        l.costeMon-=l.costeMon*usa/l.acciones;
         coste+=parte;l.coste-=parte;l.acciones-=usa;quedan-=usa;
         if(l.acciones<1e-9)L.shift();
       }
       var vendidas=o.acciones-quedan;
       if(quedan>1e-6)errores.push({op:o,nombre:INV.nombre(o),falta:quedan,tenia:vendidas});
       var parteVenta=vendidas/o.acciones;
-      var transmision=o.importe*parteVenta-o.comision;
+      var transmision=o.importe*f*parteVenta-o.comision;
       ventas.push({op:o,clave:k,nombre:INV.nombre(o),acciones:vendidas,transmision:transmision,
         adquisicion:coste,ganancia:transmision-coste,anio:+o.fecha.slice(0,4)});
     });
@@ -109,16 +144,18 @@
     });
 
     var posiciones=Object.keys(lotes).map(function(k){
-      var acc=0,coste=0;lotes[k].forEach(function(l){acc+=l.acciones;coste+=l.coste;});
-      var p=INV.precios[k];
-      var precio=p&&p.precio>0?p.precio:null;
-      return {clave:k,nombre:info[k].nombre,emp:info[k].emp,acciones:acc,coste:coste,
-        costeMedio:acc>0?coste/acc:0,precio:precio,fechaPrecio:p?p.fecha:null,auto:p?!!p.auto:false,
-        valor:precio!==null?acc*precio:null};
+      var acc=0,coste=0,costeMon=0;lotes[k].forEach(function(l){acc+=l.acciones;coste+=l.coste;costeMon+=l.costeMon;});
+      var mon=info[k].moneda,p=INV.precios[k];
+      // Un precio guardado en otra moneda (de antes de este cambio) no vale.
+      var precio=p&&p.precio>0&&(p.moneda||"EUR")===mon?p.precio:null;
+      var fx=mon==="USD"?INV.cambioHoy():1;
+      return {clave:k,nombre:info[k].nombre,emp:info[k].emp,moneda:mon,acciones:acc,coste:coste,
+        costeMedio:acc>0?coste/acc:0,precioMedio:acc>0?costeMon/acc:0,precio:precio,fechaPrecio:p?p.fecha:null,auto:p?!!p.auto:false,
+        valor:precio!==null&&fx?acc*precio*fx:null};
     }).filter(function(p){return p.acciones>1e-9;});
     posiciones.sort(function(a,b){return (b.valor===null?b.coste:b.valor)-(a.valor===null?a.coste:a.valor);});
 
-    return {posiciones:posiciones,ventas:ventas,errores:errores,sinAcciones:sinAcciones};
+    return {posiciones:posiciones,ventas:ventas,errores:errores,sinAcciones:sinAcciones,sinCambio:sinCambio};
   };
 
   // Valor de una posición: con precio actual si lo hay; si no, lo que costó.
@@ -139,6 +176,9 @@
     if(Array.isArray(c.cartera))escribir("simulador-cartera",c.cartera);
     return INV.guardar();
   };
+
+  // Pide al navegador que no borre estos datos para liberar espacio.
+  try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
 
   window.INV=INV;
 })();

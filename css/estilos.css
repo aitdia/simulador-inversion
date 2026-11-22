@@ -228,3 +228,4 @@ table.tabla-mk{min-width:820px}
 .tabla-bt th:nth-child(n+2){text-align:right} .tabla-bt th:last-child{text-align:left}
 #v-bot .tabla-bt tbody tr td:last-child{text-align:left}
 .tabla-bt td.num{white-space:nowrap}
+.precio-mon{white-space:nowrap;font-family:var(--mono)}
