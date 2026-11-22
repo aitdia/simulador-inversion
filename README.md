@@ -43,10 +43,11 @@ Web para simular antes de invertir, apuntar lo que compras y vendes, ver cuánto
 
 ## El bot
 
-- `bot/bot.py`: el bot (Python, sin librerías externas). `bot/config.json`: capital, comisión, límites y lista de empresas.
-- `bot/datos.json` y `bot/historial.json`: su memoria. Los crea y actualiza él mismo; no hace falta tocarlos.
-- `.github/workflows/bot.yml`: cuándo se ejecuta (GitHub Actions). De lunes a viernes: 15:00 prepara el día, 15:45-21:30 opera seis veces, 22:30 repasa y aprende; el sábado hace el resumen semanal.
-- Necesita el secret `FINNHUB_KEY` en el repositorio y permisos de escritura para Actions.
-- Cómo aprende: cada señal que se cumple se apunta "en sombra" y, a los 5 días, se mira si habría ganado o perdido ya con comisiones. Solo compra con reglas que lleven al menos 15 casos y ganen de media.
+- `bot/motor.py`: lo que aprende. 22 reglas de compra, 12 formas de vender (objetivo de ganancia, límite de pérdida y días), y si el mercado está alcista o bajista (S&P 500 sobre o bajo su media de 200 días). Cada señal se compara con haber tenido el S&P 500 esos mismos días, ya con comisiones. Lo antiguo pesa cada día un poco menos.
+- `bot/bot.py`: el bot en vivo (Python, sin librerías externas). `bot/config.json`: capital (5.000 $), comisión, límites y lista de empresas.
+- `bot/prueba.py`: prueba con 10 años de Yahoo Finance, día a día y sin mirar el futuro; guarda `bot/prueba.json`. Con `--sembrar` arranca el bot en vivo con lo aprendido (solo si aún no ha operado).
+- `bot/datos.json` y `bot/historial.json`: su memoria. Los actualiza él mismo.
+- `.github/workflows/bot.yml`: cuándo se ejecuta. De lunes a viernes: 15:00 prepara el día, 15:45-21:30 opera seis veces, 22:30 repasa y aprende; el sábado hace el resumen semanal. A mano se puede lanzar cualquier modo, también `prueba`.
+- Necesita el secret `FINNHUB_KEY` y permisos de escritura para Actions.
 - Probar sin internet: `BOT_MOCK=1 BOT_AHORA=2026-11-23T10:45 python3 bot/bot.py operar`.
-- Es dinero ficticio y un experimento de aprendizaje, no una recomendación de inversión.
+- Es dinero ficticio y un experimento de aprendizaje, no una recomendación de inversión. La prueba de 10 años es optimista: usa las empresas grandes de hoy.

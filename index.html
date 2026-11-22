@@ -308,21 +308,21 @@
 <div class="view" id="v-bot" hidden>
   <section class="panel">
     <div class="cmp-head"><h2>Tu bot de inversión ficticia</h2><button type="button" class="mini" id="bt-recargar">Actualizar</button></div>
-    <p class="small muted">Opera solo, con <span id="bt-capital">5.000 $</span> de mentira, entre unas 100 grandes empresas de EE. UU. más las tuyas. Cada señal que detecta la apunta y, a los 5 días, mira si habría ganado o perdido después de comisiones: así aprende qué reglas funcionan. Solo compra con las reglas que le han ido bien en al menos 15 casos. Se compara siempre con haber metido el mismo dinero en el S&amp;P 500.</p>
+    <p class="small muted">Opera solo, con <span id="bt-capital">5.000 $</span> de mentira, entre unas 110 empresas de EE. UU. Ha aprendido de 10 años de historia y sigue aprendiendo cada día: apunta cada señal que ve y, cuando se sabe cómo acabó, mira si habría ganado <b>más que el S&amp;P 500</b> esos mismos días, con 12 formas distintas de vender y según si el mercado está alcista o bajista. Solo compra con lo que le ha funcionado. Lo antiguo pesa cada día un poco menos, para adaptarse si el mercado cambia.</p>
     <div id="bt-estado" class="small"></div>
     <div class="facts" id="bt-facts"></div>
     <div id="bt-grafico" class="bt-graf" role="img"></div>
-    <div class="bt-leyenda small"><span><i class="l-bot"></i>Bot</span><span><i class="l-spy"></i>Mismo dinero en el S&amp;P 500</span></div>
+    <div class="bt-leyenda small"><span><i class="l-bot"></i>Bot</span><span><i class="l-spy"></i>S&amp;P 500</span><span><i class="l-ig"></i>Tus empresas a partes iguales</span></div>
   </section>
   <section class="panel">
     <div class="cmp-head"><h2>Lo que tiene ahora</h2><button type="button" class="mini" id="bt-directo">Precios en directo</button></div>
     <p class="small muted" id="bt-directo-msg"></p>
-    <div class="scroll"><table class="tabla-x tabla-bt"><thead><tr><th>Empresa</th><th>Compró</th><th>A</th><th>Ahora</th><th>Gana o pierde</th><th>Por qué</th></tr></thead><tbody id="bt-pos"></tbody></table></div>
+    <div class="scroll"><table class="tabla-x tabla-bt"><thead><tr><th>Empresa</th><th>Compró</th><th>A</th><th>Ahora</th><th>Gana o pierde</th><th>Por qué y cuándo venderá</th></tr></thead><tbody id="bt-pos"></tbody></table></div>
   </section>
   <section class="panel">
-    <h2>Lo que va aprendiendo</h2>
-    <p class="small muted">Cada fila es una regla. «Casos» son las veces que se ha cumplido y ya se sabe cómo acabó; «De media» es lo que habría ganado o perdido cada vez, ya con comisiones.</p>
-    <div class="scroll"><table class="tabla-x tabla-bt"><thead><tr><th>Regla</th><th>Casos</th><th>De media</th><th>Acierta</th><th>Operaciones reales</th><th>Estado</th></tr></thead><tbody id="bt-reglas"></tbody></table></div>
+    <h2>Lo que ha aprendido</h2>
+    <p class="small muted">«Ventaja» es lo que de media ganó cada vez frente a haber tenido el S&amp;P 500 esos días, ya con comisiones y con la mejor de sus 12 formas de vender. Una regla es fiable cuando tiene al menos 30 casos y la ventaja es positiva. Con el mercado <b id="bt-reg-txt"></b> ahora, solo usa las fiables de esa columna.</p>
+    <div class="scroll"><table class="tabla-x tabla-bt tabla-reglas"><thead><tr><th>Regla</th><th>Mercado alcista</th><th>Mercado bajista</th><th>Cómo vende (ahora)</th><th>Operaciones de verdad</th></tr></thead><tbody id="bt-reglas"></tbody></table></div>
   </section>
   <section class="panel">
     <h2>Sus operaciones</h2>
@@ -331,6 +331,15 @@
   <section class="panel">
     <h2>Diario del bot</h2>
     <div id="bt-diario"></div>
+  </section>
+  <section class="panel" id="bt-prueba">
+    <h2>Prueba con 10 años de historia</h2>
+    <p class="small muted" id="pr-intro"></p>
+    <div class="facts" id="pr-facts"></div>
+    <div id="pr-grafico" class="bt-graf" role="img"></div>
+    <div class="bt-leyenda small"><span><i class="l-bot"></i>Bot</span><span><i class="l-spy"></i>S&amp;P 500</span><span><i class="l-ig"></i>Tus empresas a partes iguales</span></div>
+    <div class="scroll"><table class="tabla-x tabla-bt"><thead><tr><th>Año</th><th>Bot</th><th>S&amp;P 500</th><th>Tus empresas</th><th>¿Gana al S&amp;P 500?</th></tr></thead><tbody id="pr-anios"></tbody></table></div>
+    <div class="warn small" id="pr-ojo"></div>
   </section>
 </div>
 

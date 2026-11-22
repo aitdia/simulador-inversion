@@ -14,7 +14,7 @@ on:
       modo:
         description: "Qué hacer"
         type: choice
-        options: [operar, repasar, preparar, semanal]
+        options: [operar, repasar, preparar, semanal, prueba]
         default: operar
       forzar:
         description: "Ejecutar aunque la bolsa esté cerrada (para probar)"
@@ -52,7 +52,12 @@ jobs:
       - name: Ejecutar el bot
         env:
           FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
-        run: python3 bot/bot.py "${{ steps.modo.outputs.modo }}" ${{ inputs.forzar && '--forzar' || '' }}
+        run: |
+          if [ "${{ steps.modo.outputs.modo }}" = "prueba" ]; then
+            python3 bot/prueba.py        # repite la prueba de 10 años con datos nuevos (no toca al bot en vivo)
+          else
+            python3 bot/bot.py "${{ steps.modo.outputs.modo }}" ${{ inputs.forzar && '--forzar' || '' }}
+          fi
 
       - name: Guardar lo que ha hecho
         run: |
