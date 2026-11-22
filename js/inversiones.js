@@ -3,7 +3,7 @@
 //
 // Cada operación: {id, fecha "AAAA-MM-DD", tipo "compra"|"venta", emp (id de datos.js u "otra"),
 //                  nombre (si es "otra"), acciones, precio y importe en su moneda, moneda "EUR"|"USD",
-//                  cambio (euros por 1 dólar ese día, solo si es USD), comision (€), nota}
+//                  cambio (euros por 1 dólar ese día, solo si es USD), comision (en la misma moneda), nota}
 // Las operaciones antiguas no tienen moneda: se tratan como euros.
 // Para Hacienda todo se pasa a euros con el cambio del día de cada operación.
 // Las ganancias se calculan con el método FIFO (primero en entrar, primero en salir),
@@ -114,7 +114,7 @@
       if(!(o.acciones>0)){sinAcciones.push(o);return;}
       var L=lotes[k]=lotes[k]||[];
       if(o.tipo==="compra"){
-        L.push({fecha:o.fecha,acciones:o.acciones,coste:o.importe*f+o.comision,costeMon:o.importe});
+        L.push({fecha:o.fecha,acciones:o.acciones,coste:(o.importe+o.comision)*f,costeMon:o.importe});
         return;
       }
       var quedan=o.acciones,coste=0;
@@ -127,7 +127,7 @@
       var vendidas=o.acciones-quedan;
       if(quedan>1e-6)errores.push({op:o,nombre:INV.nombre(o),falta:quedan,tenia:vendidas});
       var parteVenta=vendidas/o.acciones;
-      var transmision=o.importe*f*parteVenta-o.comision;
+      var transmision=(o.importe*parteVenta-o.comision)*f;
       ventas.push({op:o,clave:k,nombre:INV.nombre(o),acciones:vendidas,transmision:transmision,
         adquisicion:coste,ganancia:transmision-coste,anio:+o.fecha.slice(0,4)});
     });

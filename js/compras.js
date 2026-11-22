@@ -141,7 +141,7 @@
         (sin?'<span class="d aviso-txt">Sin acciones ni precio: no cuenta</span>':'')+'</td>'+
         '<td><span class="pill '+(o.tipo==="venta"?"venta":"compra")+'">'+(o.tipo==="venta"?"Venta":"Compra")+'</span></td>'+
         '<td class="num">'+(sin?"—":I.num(o.acciones,6))+'</td><td class="num">'+(sin?"—":I.mon(o.precio,I.moneda(o)))+'</td>'+
-        '<td class="num">'+I.mon(o.importe,I.moneda(o))+(I.moneda(o)==="USD"?'<span class="d">'+(o.cambio>0?"= "+I.eur.format(o.importe*o.cambio):"falta el cambio")+'</span>':"")+'</td><td class="num">'+I.eur.format(o.comision)+'</td>'+
+        '<td class="num">'+I.mon(o.importe,I.moneda(o))+(I.moneda(o)==="USD"?'<span class="d">'+(o.cambio>0?"= "+I.eur.format(o.importe*o.cambio):"falta el cambio")+'</span>':"")+'</td><td class="num">'+I.mon(o.comision,I.moneda(o))+'</td>'+
         '<td class="botones"><button type="button" class="mini" data-edit="'+o.id+'">Editar</button>'+
         '<button type="button" class="del" data-del="'+o.id+'">Borrar</button></td></tr>';
     }).join("");
@@ -268,7 +268,7 @@
   $("m-csv").addEventListener("click",function(){
     if(!I.ops.length){msg("Todavía no hay operaciones que exportar.");return;}
     var q=function(s){return '"'+String(s).replace(/"/g,'""')+'"';};
-    var filas=["Fecha;Tipo;Empresa;Acciones;Precio;Importe;Moneda;Cambio (EUR por USD);Importe (EUR);Comisión (EUR);Nota"].concat(I.ops.slice().sort(function(a,b){return a.fecha<b.fecha?-1:1;}).map(function(o){
+    var filas=["Fecha;Tipo;Empresa;Acciones;Precio;Importe;Moneda;Cambio (EUR por USD);Importe (EUR);Comisión;Nota"].concat(I.ops.slice().sort(function(a,b){return a.fecha<b.fecha?-1:1;}).map(function(o){
       var f=I.factor(o);
       return [I.fechaEs(o.fecha),o.tipo==="venta"?"Venta":"Compra",q(I.nombre(o)),o.acciones>0?n2(o.acciones):"",o.precio>0?n2(o.precio):"",n2(o.importe),I.moneda(o),o.cambio>0?n2(o.cambio):"",f?n2(Math.round(o.importe*f*100)/100):"",n2(o.comision),q(o.nota||"")].join(";");}));
     descargar(new Blob(["﻿"+filas.join("\r\n")],{type:"text/csv;charset=utf-8"}),"mis-inversiones-"+I.hoy()+".csv");
