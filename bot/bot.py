@@ -344,6 +344,7 @@ def repasar(cfg, d, fuente, forzar=False):
     dia_spy = datetime.fromtimestamp(spy["t"], NY).strftime("%Y-%m-%d") if spy["t"] else fecha
     if not forzar and dia_spy != fecha:
         return "Hoy no ha habido bolsa (festivo); no repaso."
+    fecha = dia_spy    # los cierres se guardan con el día en que hubo bolsa de verdad
     for s, q in qs.items():
         d["precios"][s] = q
         h = d["historial"].setdefault(s, [])
