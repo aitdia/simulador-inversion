@@ -54,7 +54,7 @@ jobs:
           FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
         run: |
           if [ "${{ steps.modo.outputs.modo }}" = "prueba" ]; then
-            python3 bot/prueba.py        # repite la prueba de 10 años con datos nuevos (no toca al bot en vivo)
+            python3 bot/prueba.py
           else
             python3 bot/bot.py "${{ steps.modo.outputs.modo }}" ${{ inputs.forzar && '--forzar' || '' }}
           fi
@@ -71,4 +71,3 @@ jobs:
             sleep 5
           done
           exit 1
-          # activado
