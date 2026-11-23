@@ -37,7 +37,7 @@ Web para simular antes de invertir, apuntar lo que compras y vendes, ver cuánto
 
 ## Avisos
 
-- Los datos históricos de las empresas son de mediados de noviembre de 2026 y no se actualizan solos.
+- Los datos de las empresas y la opinión de los analistas se actualizan solos cada día de bolsa desde Yahoo Finance (`bot/actualizar_web.py`, lo lanza el bot tras repasar el día). Están en `bot/web/`.
 - Los escenarios no son predicciones y el cálculo de la renta es una estimación: manda el informe fiscal de tu bróker. No es asesoramiento financiero.
 
 

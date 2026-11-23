@@ -12,7 +12,7 @@
 <body>
 <div class="wrap">
 <header>
-  <span class="stamp">Datos de las empresas de mediados de noviembre de 2026</span>
+  <span class="stamp" id="sello-datos">Datos de las empresas de Yahoo Finance, actualizados cada día de bolsa</span>
   <h1>Mi simulador de inversión</h1>
   <p>Simula antes de invertir, apunta lo que compras, mira cuánto vale tu cartera y ten preparados los números de la renta.</p>
 </header>
@@ -345,15 +345,16 @@
 
 <footer>
   <p><strong>Esto no es asesoramiento financiero.</strong> Rentabilidades pasadas no garantizan las futuras. Una sola acción puede perder la mayor parte de su valor.</p>
-  <p>Fuentes: <a href="https://totalrealreturns.com/n/NVDA,AAPL,MSFT,GOOGL,AMZN,META,TSLA">Total Real Returns (Nvidia, Apple, Microsoft, Alphabet, Amazon, Meta, Tesla)</a>, <a href="https://totalrealreturns.com/n/AMD">AMD</a>, <a href="https://totalrealreturns.com/n/NFLX">Netflix</a>, <a href="https://totalrealreturns.com/n/BABA">Alibaba</a>, <a href="https://totalrealreturns.com/n/DIS">Disney</a>, <a href="https://totalrealreturns.com/n/KO">Coca-Cola</a>, <a href="https://totalrealreturns.com/n/SPY">S&amp;P 500</a>; ChartRow: <a href="https://chartrow.com/quote/sony/trailing-returns">Sony</a>, <a href="https://chartrow.com/quote/san/returns">Banco Santander</a>, <a href="https://chartrow.com/quote/ampx/growth">Amprius</a>; salida a bolsa de Anthropic: <a href="https://www.cnn.com/2026/11/19/business/live-news/anthropic-ipo">CNN</a>, <a href="https://www.cnbc.com/2026/11/18/anthropic-ipo-ai-offering-price.html">CNBC</a>.</p>
+  <p>Fuentes: rentabilidades, peor caída y opinión de los analistas de <a href="https://finance.yahoo.com/">Yahoo Finance</a>, actualizados solos cada día de bolsa (con dividendos); gráficos en directo de <a href="https://www.tradingview.com/">TradingView</a>; salida a bolsa de Anthropic: <a href="https://www.cnn.com/2026/11/19/business/live-news/anthropic-ipo">CNN</a>, <a href="https://www.cnbc.com/2026/11/18/anthropic-ipo-ai-offering-price.html">CNBC</a>. Los escenarios futuros son supuestos educativos, no predicciones.</p>
 </footer>
 </div>
 
-<script src="js/datos.js"></script>
+<script src="bot/web/empresas.js"></script>
+<script>(function(){var f=(window.EMPRESAS||[]).map(function(e){return e.dato||"";}).sort().pop();if(f){var p=f.split("-");document.addEventListener("DOMContentLoaded",function(){var s=document.getElementById("sello-datos");if(s)s.textContent="Datos de las empresas del "+p[2]+"/"+p[1]+"/"+p[0]+" (Yahoo Finance, se actualizan solos cada día de bolsa)";});}})();</script>
 <script src="js/grafico-directo.js"></script>
 <script src="js/simulador.js"></script>
 <script src="js/cartera.js"></script>
-<script src="js/mercado-datos.js"></script>
+<script src="bot/web/mercado.js"></script>
 <script src="js/mercado.js"></script>
 <script src="js/inversiones.js"></script>
 <script src="js/compras.js"></script>

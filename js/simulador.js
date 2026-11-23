@@ -134,7 +134,7 @@
       }).join("");
       $("bars").style.gridTemplateColumns="repeat("+vals.length+",minmax(44px,1fr))";
       $("bars").style.minWidth=(vals.length*50)+"px";
-      $("yr-note").textContent="* 2026 hasta mediados de noviembre."+(capped?" Las barras de más del 250 % están recortadas; la cifra de arriba es la real.":"");
+      $("yr-note").textContent="* 2026 hasta "+(d.dato?d.dato.split("-").reverse().join("/"):"mediados de noviembre")+"."+(capped?" Las barras de más del 250 % están recortadas; la cifra de arriba es la real.":"");
       var lv=$("live");if(lv){lv.href="https://www.tradingview.com/symbols/"+d.sym.replace(":","-")+"/";lv.textContent="Ver el gráfico en directo de "+d.name+" en TradingView";}
       if(window.__live)window.__live(d);
     }else yp.hidden=true;

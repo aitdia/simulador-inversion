@@ -452,6 +452,12 @@ def main():
         nota = semanal(cfg, d)
     else:
         raise SystemExit("Modo desconocido: " + modo)
+    if modo == "repasar" and os.environ.get("BOT_MOCK") != "1":
+        try:                         # cada día de bolsa, también se actualizan los datos de la web
+            import actualizar_web
+            print(actualizar_web.main())
+        except Exception as e:
+            print("No se han podido actualizar los datos de la web:", e)
     d["ultima"] = {"cuando": ahora().isoformat(timespec="minutes"), "modo": modo, "nota": nota}
     guardar(d, modo == "repasar")
     print("[%s] %s" % (modo, nota))
