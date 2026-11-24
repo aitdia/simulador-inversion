@@ -80,7 +80,7 @@
     if(!ks.length){$("bt-pos").innerHTML='<tr><td colspan="6" class="muted">Ahora no tiene ninguna acción. Comprará cuando alguna empresa cumpla una de sus reglas fiables para el mercado de ahora.</td></tr>';return;}
     $("bt-pos").innerHTML=ks.map(function(s){
       var p=D.posiciones[s],c=precio(s),val=c===null?null:p.acciones*c,g=val===null?null:val-p.coste;
-      return '<tr><td>'+nombre(s)+'</td><td class="num">'+fecha(p.fecha)+'</td><td class="num">'+usd(p.precio)+'</td><td class="num">'+usd(c)+(directo[s]?' <span class="small up">●</span>':"")+'</td>'+
+      return '<tr class="bt-clic" data-pos="'+esc(s)+'" tabindex="0" title="Ver en la gráfica"><td>'+nombre(s)+' <span class="bt-ver" aria-hidden="true">📈</span></td><td class="num">'+fecha(p.fecha)+'</td><td class="num">'+usd(p.precio)+'</td><td class="num">'+usd(c)+(directo[s]?' <span class="small up">●</span>':"")+'</td>'+
         '<td class="num '+cls(g)+'">'+(g===null?"—":usd(g)+'<span class="d small">'+pc(g/p.coste)+'</span>')+'</td><td class="small">'+esc(NOMBRES[p.regla]||p.regla)+'<span class="d muted">'+salida(p.salida)+'</span></td></tr>';
     }).join("");
   }
@@ -109,11 +109,108 @@
     var ventas=D.operaciones.filter(function(o){return o.tipo==="venta";}),gan=ventas.filter(function(o){return o.resultado>0;}).length,tot=ventas.reduce(function(a,o){return a+o.resultado;},0);
     $("bt-ops").innerHTML=(ventas.length?'<p class="small">Ha cerrado '+ventas.length+(ventas.length===1?" operación":" operaciones")+': '+gan+' con ganancia y '+(ventas.length-gan)+' con pérdida, en total <b class="'+cls(tot)+'">'+usd(tot)+'</b> (ya con comisiones).</p>':"")+
       '<ul class="bt-lista">'+ops.map(function(o){
-        return '<li><span class="bt-tag '+(o.tipo==="compra"?"c":"v")+'">'+(o.tipo==="compra"?"Compra":"Venta")+'</span> <b>'+nombre(o.sym)+'</b> <span class="muted small">'+fecha(o.fecha)+' '+o.hora+' (hora de Nueva York)</span>'+
+        var i=D.operaciones.indexOf(o);
+        return '<li class="bt-clic" data-op="'+i+'" tabindex="0"><span class="bt-tag '+(o.tipo==="compra"?"c":"v")+'">'+(o.tipo==="compra"?"Compra":"Venta")+'</span> <b>'+nombre(o.sym)+'</b> <span class="muted small">'+fecha(o.fecha)+' '+o.hora+' (hora de Nueva York)</span>'+
           '<br><span class="small">'+o.acciones.toLocaleString("es-ES",{maximumFractionDigits:4})+' acciones a '+usd(o.precio)+(o.tipo==="venta"?' · resultado <b class="'+cls(o.resultado)+'">'+usd(o.resultado)+'</b> ('+pc(o.resultado_pct/100)+')':"")+'</span>'+
-          '<br><span class="small muted">'+esc(o.motivo)+'</span></li>';
+          '<br><span class="small muted">'+esc(o.motivo)+'</span><br><span class="small bt-vertxt">📈 Ver en la gráfica</span></li>';
       }).join("")+'</ul>'+(D.operaciones.length>40?'<p class="small muted">Se muestran las 40 últimas.</p>':"");
   }
+
+  // ---------- Explicación de una operación con su gráfica ----------
+  var HIST=null;
+  function cargarHist(){
+    if(HIST)return Promise.resolve(HIST);
+    return fetch("bot/historial.json?v="+Date.now(),{cache:"no-store"}).then(function(r){if(!r.ok)throw new Error(r.status);return r.json();}).then(function(h){HIST=h;return h;});
+  }
+  function partes(sid){var m=/g(\d+)_p(\d+)_d(\d+)/.exec(sid||"");return m?{g:+m[1]/100,p:+m[2]/100,d:+m[3]}:null;}
+  // De una operación saca su compra y, si ya la vendió, su venta.
+  function parDe(i){
+    var o=D.operaciones[i],ci=-1;
+    if(o.tipo==="compra")ci=i;else for(var j=i-1;j>=0;j--)if(D.operaciones[j].sym===o.sym&&D.operaciones[j].tipo==="compra"){ci=j;break;}
+    if(ci<0)return null;
+    var c=D.operaciones[ci],v=null;
+    for(var k=ci+1;k<D.operaciones.length;k++){var x=D.operaciones[k];if(x.sym!==c.sym)continue;if(x.tipo==="venta"){v=x;}break;}
+    var pos=D.posiciones[c.sym];
+    var abierta=!v&&pos&&pos.fecha===c.fecha?pos:null;
+    return {sym:c.sym,fecha:c.fecha,hora:c.hora,precio:c.precio,regla:c.regla,salida:c.salida||(abierta&&abierta.salida),regimen:abierta?abierta.regimen:null,motivo:c.motivo,venta:v,abierta:abierta};
+  }
+  function parDePos(s){
+    var p=D.posiciones[s];
+    for(var i=D.operaciones.length-1;i>=0;i--){var o=D.operaciones[i];if(o.sym===s&&o.tipo==="compra"&&o.fecha===p.fecha)return parDe(i);}
+    return {sym:s,fecha:p.fecha,hora:"",precio:p.precio,regla:p.regla,salida:p.salida,regimen:p.regimen,motivo:"",venta:null,abierta:p};
+  }
+
+  function explicar(t){
+    var dlg=$("bt-dlg");
+    $("bt-dlg-tit").innerHTML=nombre(t.sym);
+    $("bt-dlg-cuerpo").innerHTML='<p class="small muted">Cargando la gráfica…</p>';
+    if(dlg.showModal&&!dlg.open)dlg.showModal();else dlg.setAttribute("open","");
+    cargarHist().then(function(h){pintarExplicacion(t,h[t.sym]||[]);})
+      .catch(function(){pintarExplicacion(t,[]);});
+  }
+
+  function pintarExplicacion(t,serie){
+    var pl=partes(t.salida),obj=pl?t.precio*(1+pl.g):null,lim=pl?t.precio*(1-pl.p):null;
+    var pts=serie.map(function(x){return {f:x[0],c:x[1]};});
+    var ahora=t.abierta?precio(t.sym):null;
+    // Si la compra o la venta fueron hoy, aún no está su cierre: se añade el precio al que operó.
+    if(!pts.length||pts[pts.length-1].f<t.fecha)pts.push({f:t.fecha,c:t.precio});
+    if(t.venta&&pts[pts.length-1].f<t.venta.fecha)pts.push({f:t.venta.fecha,c:t.venta.precio});
+    if(t.abierta&&ahora!==null)pts.push({f:"ahora",c:ahora,ahora:true});
+    // Ventana: 40 días antes de la compra hasta 10 después de la venta (o hasta hoy)
+    var iC=pts.findIndex(function(x){return x.f>=t.fecha;});if(iC<0)iC=pts.length-1;
+    var iV=t.venta?pts.findIndex(function(x){return x.f>=t.venta.fecha;}):-1;
+    var desde=Math.max(0,iC-20),hasta=t.venta&&iV>=0?Math.min(pts.length-1,iV+10):pts.length-1;
+    var w=pts.slice(desde,hasta+1);iC-=desde;if(iV>=0)iV-=desde;
+    var grafico='<p class="small muted">No hay precios guardados de esta empresa para dibujarla.</p>';
+    if(w.length>=2){
+      var W=640,H=260,PL=8,PR=8,PT=14,PB=8,mn=Infinity,mx=-Infinity;
+      w.forEach(function(x){mn=Math.min(mn,x.c);mx=Math.max(mx,x.c);});
+      [t.precio,obj,lim,t.venta&&t.venta.precio].forEach(function(y){if(y){mn=Math.min(mn,y);mx=Math.max(mx,y);}});
+      var pad=(mx-mn)*0.08||1;mn-=pad;mx+=pad;
+      var X=function(i){return PL+(W-PL-PR)*i/(w.length-1);},Y=function(y){return PT+(H-PT-PB)*(1-(y-mn)/(mx-mn));};
+      var linea=w.map(function(x,i){return (i?"L":"M")+X(i).toFixed(1)+","+Y(x.c).toFixed(1);}).join("");
+      var hz=function(y,c,txt){return y?'<line x1="'+PL+'" x2="'+(W-PR)+'" y1="'+Y(y).toFixed(1)+'" y2="'+Y(y).toFixed(1)+'" class="'+c+'"/><text x="'+(PL+4)+'" y="'+(Y(y)-5).toFixed(1)+'" text-anchor="start" class="ex-txt '+c+'">'+txt+'</text>':"";};
+      var punto=function(i,y,c,txt){var x=X(i),an=x>W-60?"end":x<60?"start":"middle";return '<circle cx="'+x.toFixed(1)+'" cy="'+Y(y).toFixed(1)+'" r="6" class="'+c+'"/><text x="'+(an==="end"?x-8:an==="start"?x+8:x).toFixed(1)+'" y="'+(Y(y)+(c==="ex-v"?22:-12)).toFixed(1)+'" text-anchor="'+an+'" class="ex-txt ex-et">'+txt+'</text>';};
+      var finX=t.venta&&iV>=0?iV:w.length-1;
+      grafico='<svg viewBox="0 0 '+W+' '+H+'" class="ex-svg" role="img" aria-label="Precio de '+esc(t.sym)+' con la compra y la venta del bot">'+
+        (pl?'<rect x="'+X(iC).toFixed(1)+'" y="'+PT+'" width="'+Math.max(2,X(finX)-X(iC)).toFixed(1)+'" height="'+(H-PT-PB)+'" class="ex-tramo"/>':"")+
+        hz(obj,"ex-obj","objetivo "+pc(pl&&pl.g))+hz(lim,"ex-lim","límite −"+(pl?Math.round(pl.p*100):"")+" %")+
+        '<path d="'+linea+'" class="ex-linea"/>'+
+        punto(iC,t.precio,"ex-c","compra")+(t.venta&&iV>=0?punto(iV,t.venta.precio,"ex-v","venta"):"")+
+        (t.abierta&&ahora!==null?'<circle cx="'+X(w.length-1).toFixed(1)+'" cy="'+Y(ahora).toFixed(1)+'" r="4" class="ex-ahora"/>':"")+'</svg>'+
+        '<div class="bt-ejes small muted"><span>'+fecha(w[0].f)+'</span><span>cierre de cada día'+(t.abierta?" y precio de ahora":"")+'</span><span>'+(w[w.length-1].ahora?"ahora":fecha(w[w.length-1].f))+'</span></div>';
+    }
+    // Texto
+    var r=(D.resumen_reglas||{})[t.regla]||{},reg=t.regimen||D.regimen||"alcista",st=r[reg];
+    var re=(D.reales||{})[t.regla];
+    var html='<div class="ex-pasos">'+
+      '<div><span class="bt-tag c">1 · Compra</span> El '+fecha(t.fecha)+(t.hora?' a las '+t.hora+' (Nueva York)':'')+', a '+usd(t.precio)+'. '+
+        'Señal: <b>'+esc(r.nombre||NOMBRES[t.regla]||t.regla)+'</b>.'+(t.motivo?'<br><span class="small muted">'+esc(t.motivo)+'</span>':'')+'</div>'+
+      (pl?'<div><span class="bt-tag n">2 · Plan de venta</span> Vender si llega a <b class="up">'+usd(obj)+'</b> ('+pc(pl.g)+'), si baja a <b class="down">'+usd(lim)+'</b> (−'+Math.round(pl.p*100)+' %) o, si no pasa ninguna de las dos, a los <b>'+pl.d+' días de bolsa</b>. Es la forma de vender que mejor le ha funcionado con esta señal.</div>':'')+
+      (t.venta?'<div><span class="bt-tag v">3 · Venta</span> El '+fecha(t.venta.fecha)+' a '+usd(t.venta.precio)+'. '+esc(t.venta.motivo)+' Resultado: <b class="'+cls(t.venta.resultado)+'">'+usd(t.venta.resultado)+'</b> ('+pc(t.venta.resultado_pct/100)+'), ya con comisiones.'+
+          (pl&&(t.venta.precio<lim*0.99||t.venta.precio>obj*1.01)?'<br><span class="small muted">Vendió más allá de su '+(t.venta.precio<lim?'límite':'objetivo')+' porque solo mira el precio una vez cada hora: entre una vuelta y otra el precio siguió moviéndose.</span>':'')+'</div>'
+        :(t.abierta?'<div><span class="bt-tag n">3 · Ahora</span> Sigue comprada. '+(ahora!==null?'Va a <b>'+usd(ahora)+'</b>: <b class="'+cls(ahora-t.precio)+'">'+pc(ahora/t.precio-1)+'</b> desde la compra.':'')+'</div>':''))+
+      '</div>';
+    html+='<div class="ex-graf">'+grafico+'</div>'+
+      '<div class="bt-leyenda small"><span><i class="l-bot"></i>Precio</span><span><i class="l-obj"></i>Objetivo</span><span><i class="l-lim"></i>Límite</span><span><i class="l-tramo"></i>Tiempo que la tuvo</span></div>';
+    if(st)html+='<p class="small">Por qué se fía de esta señal: con el mercado '+reg+', en '+Math.round(st.casos)+' casos de su historia ha ganado de media <b class="'+cls(st.media)+'">'+pc(st.media)+'</b> más que el S&amp;P 500 y ha acertado el '+Math.round(st.acierta*100)+' % de las veces'+
+      (st.rec_media!=null?'; últimamente, '+pc(st.rec_media)+' en '+Math.round(st.rec_casos)+' casos':'')+'.'+
+      (re?' Con dinero ficticio de verdad la ha usado '+re.n+(re.n===1?' vez':' veces')+', con un resultado de <b class="'+cls(re.resultado)+'">'+usd(re.resultado)+'</b>.':'')+'</p>';
+    html+='<p class="small muted">Ganar «más que el S&amp;P 500 de media» no quiere decir que acierte siempre: es una media de muchos casos, y cada operación suelta puede salir bien o mal.</p>';
+    $("bt-dlg-cuerpo").innerHTML=html;
+  }
+
+  function alPulsar(e){
+    var el=e.target.closest(".bt-clic");if(!el||!D)return;
+    if(e.type==="keydown"&&e.key!=="Enter"&&e.key!==" ")return;
+    if(e.type==="keydown")e.preventDefault();
+    var t=el.dataset.pos?parDePos(el.dataset.pos):parDe(+el.dataset.op);
+    if(t)explicar(t);
+  }
+  ["bt-pos","bt-ops"].forEach(function(id){$(id).addEventListener("click",alPulsar);$(id).addEventListener("keydown",alPulsar);});
+  $("bt-dlg-cerrar").addEventListener("click",function(){var d=$("bt-dlg");if(d.close)d.close();else d.removeAttribute("open");});
+  $("bt-dlg").addEventListener("click",function(e){if(e.target===this&&this.close)this.close();});
 
   function diario(){
     var items=D.resumenes.slice(-14).reverse();
