@@ -1,21 +1,16 @@
 name: Bot de inversión ficticia
 
-# Horas en UTC. En invierno, hora de España = UTC + 1 (en verano, + 2).
-# El bot comprueba en cada ejecución si la bolsa de EE. UU. está abierta: si no lo está, no opera.
+# Lo despierta cron-job.org cada hora con modo "auto": el bot decide qué toca según la hora de Nueva York
+# (antes de abrir: preparar · bolsa abierta: operar · después del cierre: repasar · sábado: resumen).
+# Los horarios de GitHub (schedule) no se usan porque llegaban con horas de retraso o no llegaban.
 on:
-  schedule:
-    - cron: "0 14 * * 1-5"              # 15:00  preparar el día
-    - cron: "45 14,15,16,17,18 * * 1-5" # 15:45, 16:45, 17:45, 18:45, 19:45  operar
-    - cron: "30 20 * * 1-5"             # 21:30  operar (última antes del cierre)
-    - cron: "30 21 * * 1-5"             # 22:30  repasar el día y aprender
-    - cron: "0 9 * * 6"                 # sábado 10:00  resumen semanal
   workflow_dispatch:
     inputs:
       modo:
         description: "Qué hacer"
         type: choice
-        options: [operar, repasar, preparar, semanal, prueba]
-        default: operar
+        options: [auto, operar, repasar, preparar, semanal, prueba]
+        default: auto
       forzar:
         description: "Ejecutar aunque la bolsa esté cerrada (para probar)"
         type: boolean
@@ -38,16 +33,7 @@ jobs:
       - name: Elegir modo
         id: modo
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "modo=${{ inputs.modo }}" >> "$GITHUB_OUTPUT"
-          else
-            case "${{ github.event.schedule }}" in
-              "0 14 * * 1-5") echo "modo=preparar" >> "$GITHUB_OUTPUT" ;;
-              "30 21 * * 1-5") echo "modo=repasar" >> "$GITHUB_OUTPUT" ;;
-              "0 9 * * 6") echo "modo=semanal" >> "$GITHUB_OUTPUT" ;;
-              *) echo "modo=operar" >> "$GITHUB_OUTPUT" ;;
-            esac
-          fi
+          echo "modo=${{ inputs.modo || 'auto' }}" >> "$GITHUB_OUTPUT"
 
       - name: Ejecutar el bot
         env:

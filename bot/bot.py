@@ -431,10 +431,35 @@ def semanal(cfg, d):
     return txt
 
 
+def que_toca(d):
+    """Modo automático: decide qué hacer según la hora de Nueva York. None si no toca nada."""
+    t = ahora()
+    hoy_ny = t.strftime("%Y-%m-%d")
+    m = t.hour * 60 + t.minute
+    if t.weekday() == 6:
+        return None
+    if t.weekday() == 5:
+        ya = any(x["tipo"] == "semana" and x["fecha"] == hoy_ny for x in d["resumenes"])
+        return None if ya else "semanal"
+    if m < 9 * 60 + 30:
+        return None if (d.get("plan") or {}).get("fecha") == hoy_ny else "preparar"
+    if m < 16 * 60:
+        return "operar"
+    ultimo = d["historial"].get("SPY", [[""]])[-1][0]
+    return None if ultimo >= hoy_ny else "repasar"
+
+
 def main():
     modo = sys.argv[1] if len(sys.argv) > 1 else "operar"
     forzar = "--forzar" in sys.argv
     cfg, d = cargar()
+    if modo == "auto":
+        modo = que_toca(d)
+        if modo is None:
+            print("[auto] A esta hora no toca nada; no cambio nada.")
+            return
+        if modo == "operar" and (d.get("plan") or {}).get("fecha") != hoy():
+            preparar(cfg, d)          # primera vez del día: deja escrito el plan antes de operar
     if os.environ.get("BOT_MOCK") == "1":
         fuente = Simulado(d["historial"])
     else:
@@ -442,6 +467,7 @@ def main():
         fuente = Finnhub(clave) if clave else None
         if modo in ("operar", "repasar") and not fuente:
             raise SystemExit("Falta la clave: crea el secret FINNHUB_KEY en el repositorio.")
+    hist_antes = (d["historial"].get("SPY") or [[""]])[-1][0]
     if modo == "operar":
         nota = operar(cfg, d, fuente, forzar)
     elif modo == "repasar":
@@ -452,7 +478,8 @@ def main():
         nota = semanal(cfg, d)
     else:
         raise SystemExit("Modo desconocido: " + modo)
-    if modo == "repasar" and os.environ.get("BOT_MOCK") != "1":
+    repasado = modo == "repasar" and (d["historial"].get("SPY") or [[""]])[-1][0] != hist_antes or (modo == "repasar" and forzar)
+    if repasado and os.environ.get("BOT_MOCK") != "1":
         try:                         # cada día de bolsa, también se actualizan los datos de la web
             import actualizar_web
             print(actualizar_web.main())
