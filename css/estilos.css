@@ -261,3 +261,27 @@ text.ex-lim{fill:var(--bad);stroke:none}
 .ex-txt{font-size:13px;fill:var(--ink);font-family:var(--sans,system-ui)}
 .bt-leyenda .l-obj{background:var(--good,#1a7f4b)} .bt-leyenda .l-lim{background:var(--bad)} .bt-leyenda .l-tramo{background:var(--accent-soft);height:10px}
 .bt-tag.n{background:var(--line);color:var(--ink)} .ex-et{font-weight:600}
+
+/* ---------- Buscar ---------- */
+.bs-form{display:flex;gap:8px}
+.bs-form input{flex:1;min-width:0;font:inherit;font-size:1.05rem;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.bs-cab{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.bs-cab img{border-radius:10px;background:#fff;object-fit:contain}
+.bs-cab h2{margin:0}
+.bs-cab>div:nth-child(2){flex:1;min-width:180px}
+.bs-precio{display:flex;flex-direction:column;align-items:flex-end;text-align:right}
+.bs-precio b{font-family:var(--mono);font-size:1.7rem;font-weight:600}
+.bs-barra{position:relative;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--bad-soft),var(--accent-soft));margin-top:8px}
+.bs-barra span{position:absolute;top:-4px;width:4px;height:16px;border-radius:2px;background:var(--ink);transform:translateX(-2px)}
+.bs-barra-ej{display:flex;justify-content:space-between}
+.bs-metricas{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.bs-exp{font-size:.72rem;margin-top:4px;line-height:1.35}
+.bs-anios{display:flex;flex-wrap:wrap;gap:6px}
+.bs-anios span{font-family:var(--mono);font-size:.85rem;background:var(--bg);border-radius:6px;padding:4px 8px}
+.bs-anios i{font-style:normal;color:var(--muted);margin-right:6px}
+.bs-noticias{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.bs-noticias li{display:flex;flex-direction:column;gap:2px}
+.bs-noticias a{color:var(--ink);font-weight:500}
+#bs-acciones .btn{text-decoration:none}
+@media (max-width:560px){.bs-precio{align-items:flex-start;text-align:left;width:100%}}
+#bs-res:not([hidden]){display:flex;flex-direction:column;gap:28px}

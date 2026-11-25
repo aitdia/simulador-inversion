@@ -1,7 +1,7 @@
 // Pestañas: muestra una sección u otra según el # de la dirección.
 (function(){
   "use strict";
-  var VISTAS=["simulador","mercado","cartera","compras","renta","plan","bot"];
+  var VISTAS=["simulador","buscar","mercado","cartera","compras","renta","plan","bot"];
   function mostrar(){
     var v=location.hash.replace("#","");
     if(VISTAS.indexOf(v)===-1)v="simulador";

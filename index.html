@@ -19,6 +19,7 @@
 
 <nav class="tabs" aria-label="Secciones">
   <a href="#simulador">Simulador</a>
+  <a href="#buscar">Buscar</a>
   <a href="#mercado">Mercado</a>
   <a href="#cartera">Probar reparto</a>
   <a href="#compras">Mis inversiones</a>
@@ -113,6 +114,75 @@
   </ul>
 </section>
 
+</div>
+
+<div class="view" id="v-buscar" hidden>
+  <section class="panel">
+    <h2>Busca cualquier acción</h2>
+    <form class="bs-form" id="bs-form" role="search" autocomplete="off">
+      <input type="search" id="bs-q" list="bs-lista" placeholder="Escribe un nombre o un símbolo: Apple, AMD, Inditex, SPY…" aria-label="Acción a buscar">
+      <datalist id="bs-lista"></datalist>
+      <button type="submit" class="btn">Buscar</button>
+    </form>
+    <div class="chips" id="bs-recientes" aria-label="Búsquedas recientes"></div>
+    <div id="bs-sin-clave" class="warn small" hidden>
+      Para ver el precio, los datos de la empresa, los analistas y las noticias hace falta tu clave gratuita de Finnhub en este navegador (la misma que usa el bot). Sin ella solo verás el gráfico.
+      <div class="acciones" style="margin-top:8px"><input type="text" id="bs-clave" class="clave" spellcheck="false" placeholder="Pega aquí tu clave de Finnhub" aria-label="Clave de Finnhub"><button type="button" class="btn sec" id="bs-guardar">Guardar clave</button></div>
+    </div>
+    <p class="small" id="bs-msg" aria-live="polite"></p>
+  </section>
+
+  <div id="bs-res" hidden>
+    <section class="panel">
+      <div class="bs-cab">
+        <img id="bs-logo" alt="" width="48" height="48" hidden>
+        <div><h2 id="bs-nombre"></h2><p class="small muted" id="bs-sub"></p></div>
+        <div class="bs-precio"><b id="bs-p"></b><span id="bs-dp"></span><span class="small muted" id="bs-hora"></span></div>
+      </div>
+      <div class="facts" id="bs-dia"></div>
+      <div id="bs-rango"></div>
+      <div class="acciones" id="bs-acciones"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Gráfico</h2>
+      <div class="tv" id="bs-tv"></div>
+      <p class="small muted">Gráfico en directo de TradingView. Puedes cambiar el plazo (1 día, 1 mes, 1 año, 5 años…) y añadir indicadores desde el propio gráfico.</p>
+    </section>
+
+    <section class="panel" id="bs-sec-num">
+      <h2>Números de la empresa</h2>
+      <p class="small muted" id="bs-num-nota"></p>
+      <div class="bs-metricas" id="bs-num"></div>
+    </section>
+
+    <section class="panel" id="bs-sec-rent">
+      <h2>Cuánto ha subido o bajado</h2>
+      <div class="facts" id="bs-rent"></div>
+      <div id="bs-anios"></div>
+    </section>
+
+    <section class="panel" id="bs-sec-an">
+      <h2>Qué opinan los analistas</h2>
+      <div id="bs-an"></div>
+    </section>
+
+    <section class="panel" id="bs-sec-res">
+      <h2>Resultados trimestrales</h2>
+      <div id="bs-res-tri"></div>
+    </section>
+
+    <section class="panel" id="bs-sec-bot">
+      <h2>Tu bot y esta empresa</h2>
+      <div id="bs-bot"></div>
+    </section>
+
+    <section class="panel" id="bs-sec-not">
+      <h2>Últimas noticias</h2>
+      <ul class="bs-noticias" id="bs-not"></ul>
+    </section>
+    <p class="small muted">Datos de Finnhub (precio, empresa, números, analistas, resultados y noticias) y TradingView (gráfico). Es información para aprender, no una recomendación de compra o venta.</p>
+  </div>
 </div>
 
 <div class="view" id="v-mercado" hidden>
@@ -366,6 +436,7 @@
 <script src="js/renta.js"></script>
 <script src="js/plan.js"></script>
 <script src="js/bot.js"></script>
+<script src="js/buscar.js"></script>
 <script src="js/pestanas.js"></script>
 </body>
 </html>
