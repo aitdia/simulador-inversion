@@ -379,7 +379,7 @@ def repasar(cfg, d, fuente, forzar=False):
     else:
         d["curva"].append([fecha, r2(vb), r2(vi), r2(vg)])
 
-    cap = d["capital"]
+    cap = (d.get("comparar_desde") or {}).get("valor", d["capital"])   # los tres parten del mismo dinero
     hoy_ops = [o for o in d["operaciones"] if o["fecha"] == fecha]
     fiables = [k for k, v in d["resumen_reglas"].items() if v.get(d["regimen"], {}).get("fiable")]
     txt = "Bot: %s $ (%s). S&P 500: %s $ (%s). Tus empresas a partes iguales: %s $ (%s). " % (

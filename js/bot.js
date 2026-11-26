@@ -49,12 +49,15 @@
         (hace>4*1440?' <span class="down">Hace días que no se ejecuta: mira la pestaña Actions del repositorio.</span>':"");}
     var v=valores(),cap=D.capital,reg=D.regimen||"alcista";
     var n=Object.keys(D.posiciones).length,nf=fiables(reg).length;
+    var cd=D.comparar_desde,b0=cd?cd.valor:cap,f0=fecha(cd?cd.fecha:(D.indice?D.indice.fecha:D.inicio));
+    var g=function(x){return x==null?"—":pc(x/b0-1);};
     $("bt-facts").innerHTML=
-      '<div class="fact"><span>El bot tiene</span><b class="'+cls(v.bot-cap)+'">'+usd(v.bot)+'</b><span>'+pc(v.bot/cap-1)+' desde el '+fecha(D.indice?D.indice.fecha:D.inicio)+'</span></div>'+
-      '<div class="fact"><span>Con el S&amp;P 500 tendría</span><b class="'+cls((v.spy||cap)-cap)+'">'+usd(v.spy)+'</b><span>'+(v.spy?pc(v.spy/cap-1)+" · el bot va "+(v.bot>=v.spy?"<span class=\"fuerte up\">por delante</span>":"<span class=\"fuerte down\">por detrás</span>"):"")+'</span></div>'+
-      '<div class="fact"><span>Con tus empresas a partes iguales</span><b class="'+cls((v.ig||cap)-cap)+'">'+usd(v.ig)+'</b><span>'+(v.ig?pc(v.ig/cap-1):"")+'</span></div>'+
-      '<div class="fact"><span>Ahora mismo</span><b>'+n+(n===1?" empresa":" empresas")+'</b><span>'+usd(D.efectivo)+' sin invertir · mercado <span class="fuerte">'+reg+'</span> · '+nf+(nf===1?" regla fiable":" reglas fiables")+'</span></div>';
-    grafico($("bt-grafico"),D.curva.slice(),true,cap);posiciones();reglas();operaciones();diario();
+      '<div class="fact"><span>El bot tiene</span><b class="'+cls(v.bot-b0)+'">'+usd(v.bot)+'</b><span>'+g(v.bot)+' desde el '+f0+' · '+pc(v.bot/cap-1)+' desde que empezó con '+usd0(cap)+'</span></div>'+
+      '<div class="fact"><span>Con el S&amp;P 500 tendría</span><b class="'+cls((v.spy||b0)-b0)+'">'+usd(v.spy)+'</b><span>'+(v.spy?g(v.spy)+" desde el "+f0+" · el bot va "+(v.bot>=v.spy?"<span class=\"fuerte up\">por delante</span>":"<span class=\"fuerte down\">por detrás</span>"):"")+'</span></div>'+
+      '<div class="fact"><span>Con tus empresas a partes iguales</span><b class="'+cls((v.ig||b0)-b0)+'">'+usd(v.ig)+'</b><span>'+(v.ig?g(v.ig)+" desde el "+f0:"")+'</span></div>'+
+      '<div class="fact"><span>Ahora mismo</span><b>'+n+(n===1?" empresa":" empresas")+'</b><span>'+usd(D.efectivo)+' sin invertir · mercado <span class="fuerte">'+reg+'</span> · '+nf+(nf===1?" regla fiable":" reglas fiables")+'</span></div>'+
+      (cd?'<p class="small muted" style="grid-column:1/-1;margin:0">La comparación empieza el '+f0+' al cierre, cuando el bot ya había hecho sus primeras compras: los tres parten con el mismo dinero ('+usd(b0)+').</p>':'');
+    grafico($("bt-grafico"),D.curva.slice(),true,b0);posiciones();reglas();operaciones();diario();
   }
 
   function grafico(g,c,conAhora,cap){
@@ -70,7 +73,7 @@
     g.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" aria-hidden="true">'+
       '<line x1="'+PL+'" x2="'+(W-PR)+'" y1="'+base+'" y2="'+base+'" class="g-base"/>'+
       '<path d="'+linea(3)+'" class="g-ig"/><path d="'+linea(2)+'" class="g-spy"/><path d="'+linea(1)+'" class="g-bot"/></svg>'+
-      '<div class="bt-ejes small muted"><span>'+fecha(c[0][0])+'</span><span>línea de puntos: los '+usd0(cap)+' del principio</span><span>'+(String(c[c.length-1][0]).indexOf("ahora")>-1?"ahora":fecha(c[c.length-1][0]))+'</span></div>';
+      '<div class="bt-ejes small muted"><span>'+fecha(c[0][0])+'</span><span>línea de puntos: '+usd0(cap)+', el punto de partida</span><span>'+(String(c[c.length-1][0]).indexOf("ahora")>-1?"ahora":fecha(c[c.length-1][0]))+'</span></div>';
     var u=c[c.length-1];
     g.setAttribute("aria-label","Bot "+usd0(u[1])+", S&P 500 "+usd0(u[2])+", tus empresas "+usd0(u[3]));
   }
